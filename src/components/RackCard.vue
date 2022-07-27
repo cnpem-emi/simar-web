@@ -63,7 +63,7 @@ import NotificationToggler from "./NotificationToggler";
 import { mdiChartAreasplineVariant } from "@mdi/js";
 
 export default {
-  props: ["items", "item", "filtered_keys", "keys"],
+  props: ["item", "filtered_keys"],
   data: function () {
     return {
       dialog: false,
