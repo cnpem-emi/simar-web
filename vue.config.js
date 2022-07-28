@@ -14,7 +14,7 @@ module.exports = {
   devServer: {
     open: process.platform === 'darwin',
     host: '0.0.0.0',
-    https: process.env.NODE_ENV !== "production" ? {
+    https: process.env.NODE_ENV === "development" ? {
       key: fs.readFileSync('./sim.key'),
       cert: fs.readFileSync('./sim.crt'),
     } : undefined,

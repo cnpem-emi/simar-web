@@ -1,4 +1,4 @@
-name: Build
+name: SIMAR Web Interface Unit Tests
 
 # Controls when the workflow will run
 on:
