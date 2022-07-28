@@ -187,7 +187,6 @@ async function parse_json(self) {
             parent: parent,
             name: sensor.name,
             pvs: fill_template(sensor.pvs),
-            pv_names: pv_names,
           });
           pvs = pvs.concat(pv_names);
         }
@@ -281,10 +280,12 @@ export default {
       }
     },
     on_update(e) {
-      const index = this.items.findIndex((i) =>
-        i.pv_names.includes(e.detail.pv)
-      );
       const pv_type = get_type(e.detail.pv);
+      let pv_name = e.detail.pv;
+
+      if (pv_type === "Current") pv_name = pv_name.replace(/CH[0-9]/, "CH?");
+
+      let index = this.items.findIndex((i) => i.pvs[pv_type].name === pv_name);
 
       if (pv_type === "Rack Open" || pv_type === "Leak") {
         // Rack door status

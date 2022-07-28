@@ -7,6 +7,9 @@ import Vuex from 'vuex'
 
 describe('RackCard.vue', () => {
   const keys = ["Temperature", "Pressure", "Rack Open", "Humidity", "Leak"]
+  const pvs = Object.assign({}, EMPTY_PVS, {Temperature: {name: "960E1:CO-SIMAR-01:Temp-Mon", value: "20 C"}, Pressure: {name: "960E1:CO-SIMAR-01:Pressure-Mon", value: "900 hPa"}});
+
+  const default_item = { name: "Test", parent: "Test", pv_names: ["960E1:CO-SIMAR-01:Temp-Mon", "960E1:CO-SIMAR-01:Pressure-Mon"], pvs: pvs };
   const localVue = createLocalVue()
   localVue.use(Vuex);
   let vuetify
@@ -17,27 +20,17 @@ describe('RackCard.vue', () => {
 
     store = new Vuex.Store({
       state: {
-        msalConfig: {
-          auth: {
-            clientId: process.env.VUE_APP_ID,
-            authority: process.env.VUE_APP_AUTH,
-          },
-          cache: {
-            cacheLocation: "localStorage",
-          },
-        },
-        sw: undefined,
-        accessToken: "",
-        msalInstance: "",
         account: undefined,
-        message: "",
-        snackbar: false,
         url: "ais-eng-srv-la.cnpem.br",
-        notifications: [],
-        notification_count: 0
       },
+      mutations: {
+        setAccount(state, account) {
+          state.account = account;
+        },
+      }
     })
   })
+
   const mountFunction = options => {
     return mount(RackCard, {
       localVue,
@@ -46,12 +39,13 @@ describe('RackCard.vue', () => {
       mocks: {
         $vuetify: { breakpoint: {} }
       },
+      propsData: { item: default_item, filtered_keys: keys},
       ...options
     })
   }
 
   it('renders all passed keys', () => {
-    const wrapper = mountFunction({ propsData: { item: { name: "Test", parent: "Test", pv_names: ["Test:PV:Temp-Mon", "Test:PV:Pressure-Mon"], pvs: EMPTY_PVS }, filtered_keys: keys } });
+    const wrapper = mountFunction();
 
     const list = wrapper.find(".v-card").find(".v-list").findAll(".v-list-item__content");
 
@@ -61,23 +55,60 @@ describe('RackCard.vue', () => {
   })
 
   it('sets ? as value for unassigned values', () => {
-    const wrapper = mountFunction({ propsData: { item: { name: "Test", parent: "Test", pv_names: ["Test:PV:Temp-Mon", "Test:PV:Pressure-Mon"], pvs: EMPTY_PVS }, filtered_keys: keys } });
+    const wrapper = mountFunction();
     const list = wrapper.find(".v-card").find(".v-list").findAll("span .v-chip__content");
 
-    for (let i = 0; i < list.length; i++) {
+    for (let i = 2; i < list.length; i++) {
       expect(list.at(i).text()).toMatch("?");
     }
   })
 
   it('modifies PV values in real time', async () => {
-    let item = { name: "Test", parent: "Test", pv_names: ["Test:PV:Temp-Mon", "Test:PV:Pressure-Mon"], pvs: EMPTY_PVS };
-    const wrapper = mountFunction({ propsData: { item: { name: "Test", parent: "Test", pv_names: ["Test:PV:Temp-Mon", "Test:PV:Pressure-Mon"], pvs: EMPTY_PVS }, filtered_keys: keys } });
-
-    expect(wrapper.find(".v-card").find(".v-list").findAll("span .v-chip__content").at(0).text()).toMatch("?");
-
-    item.pvs.Temperature.value = "20 C";
-    await wrapper.setProps({ item: item });
+    let item = default_item;
+    const wrapper = mountFunction();
 
     expect(wrapper.find(".v-card").find(".v-list").findAll("span .v-chip__content").at(0).text()).toMatch("20 C");
+
+    item.pvs.Temperature.value = "22 C";
+    await wrapper.setProps(item);
+
+    expect(wrapper.find(".v-card").find(".v-list").findAll("span .v-chip__content").at(0).text()).toMatch("22 C");
+  })
+
+  it('configuration is disabled for unauthenticated users', () => {
+    const wrapper = mountFunction();
+    const button = wrapper.find(".v-card").find(".v-card__title").find(".v-dialog__container").find(".v-btn--disabled");
+
+    expect(button.exists()).toBe(true);
+  })
+
+  it('configuration is enabled for authenticated users', () => {
+    store.commit("setAccount", true);
+    const wrapper = mountFunction();
+    const button = wrapper.find(".v-card").find(".v-card__title").find(".v-dialog__container").find(".v-btn--disabled");
+
+    expect(button.exists()).toBe(false);
+  })
+
+  it('chips point to valid Archiver link', async () => {
+    let item = default_item;
+    const wrapper = mountFunction();
+
+    item.pvs.Temperature.name = "960E1:CO-SIMAR-01:Temp-Mon";
+
+    await wrapper.setProps(item);
+    const chip = wrapper.find(".v-card").find(".v-list").find(".v-chip");
+
+    expect(chip.attributes().href).toBe("https://ais-eng-srv-la.cnpem.br/archiver-viewer/?pv=960E1:CO-SIMAR-01:Temp-Mon");
+  })
+
+  it('shortcut to plot all PVs displays right PVs', async () => {
+    window.open = jest.fn();
+
+    const wrapper = mountFunction();
+    const shortcut = wrapper.find(".v-card").find(".v-card__title").find(".v-btn");
+    await shortcut.trigger("click");
+
+    expect(window.open).toHaveBeenCalledWith("https://ais-eng-srv-la.cnpem.br/archiver-viewer/?pv=960E1:CO-SIMAR-01:Temp-Mon&pv=960E1:CO-SIMAR-01:Pressure-Mon", "_blank");
   })
 })

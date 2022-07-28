@@ -104,10 +104,16 @@ export default {
       else return "green";
     },
     display_archiver() {
+      let pv_names = [];
+      for(const pv of Object.values(this.item.pvs)) {
+        if (pv.name !== "")
+          pv_names.push(pv.name);
+      }
+
       window.open(
         `https://${
           this.$store.state.url
-        }/archiver-viewer/?pv=${this.item.pv_names.join("&pv=")}`,
+        }/archiver-viewer/?pv=${pv_names.join("&pv=")}`,
         "_blank"
       );
     },
