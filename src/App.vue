@@ -83,7 +83,6 @@ export default {
       "message",
       this.$store.commit("updateNotifications")
     );
-    this.$store.commit("updateNotifications");
   },
 };
 </script>

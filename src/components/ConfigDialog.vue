@@ -38,42 +38,14 @@
         {{ item.parent }}
       </v-card-subtitle>
       <v-divider />
-      <v-list>
+      <v-list
+        v-for="name in ['Temperature', 'Pressure', 'Humidity', 'Voltage']"
+        :key="name"
+      >
         <limit-range
-          name="Temperature"
+          :name="name"
           v-bind:item="item"
-          @change="
-            (e) => {
-              range.Temperature = e;
-            }
-          "
-        />
-        <limit-range
-          name="Humidity"
-          v-bind:item="item"
-          @change="
-            (e) => {
-              range.Humidity = e;
-            }
-          "
-        />
-        <limit-range
-          name="Voltage"
-          v-bind:item="item"
-          @change="
-            (e) => {
-              range.Voltage = e;
-            }
-          "
-        />
-        <limit-range
-          name="Pressure"
-          v-bind:item="item"
-          @change="
-            (e) => {
-              range.Pressure = e;
-            }
-          "
+          @change="range[name] = $event"
         />
       </v-list>
       <v-container>
@@ -183,7 +155,6 @@ export default {
 
       for (let pv of Object.keys(this.item.pvs)) {
         if (!this.item.pvs[pv].name) continue;
-        //console.log(this.item.pvs[pv], this.range[pv][0] !== this.item.pvs[pv].lo_limit);
 
         if (
           this.range[pv] !== undefined &&

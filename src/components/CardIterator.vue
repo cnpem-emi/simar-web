@@ -142,13 +142,6 @@ import {
 } from "@mdi/js";
 
 async function parse_json(self) {
-  let pv_info = [];
-
-  try {
-    pv_info = await self.get_pv_info();
-  } catch {
-    console.warn("Notifications are not available");
-  }
   return new Promise((resolve) => {
     setTimeout(async () => {
       const response = await fetch("config.json");
@@ -162,18 +155,10 @@ async function parse_json(self) {
             if (pv !== "Current") {
               pv_names.push(sensor.pvs[pv].name);
             }
-            const i = pv_info.findIndex((i) => i.name === sensor.pvs[pv].name);
-
-            if (i > -1) {
-              sensor.pvs[pv].subscribed = pv_info[i].subbed;
-              sensor.pvs[pv].hi_limit = pv_info[i].hi_limit;
-              sensor.pvs[pv].lo_limit = pv_info[i].lo_limit;
-            }
           }
 
           if (sensor.pvs.Current) {
             const current_pv_names = [];
-
             const current_name = sensor.pvs.Current.name;
 
             for (let i = 0; i < 7; i++) {
@@ -311,6 +296,20 @@ export default {
 
     this.con.onopen = this.con.monitorPvs(await parse_json(this));
     this.con.onupdate = this.on_update;
+
+    try {
+      for (let pv of await this.get_pv_info()) {
+        const pv_type = get_type(pv.name);
+        const i = this.items.findIndex((i) => i.pvs[pv_type].name === pv.name);
+        if (i > -1) {
+          this.items[i].pvs[pv_type].subscribed = pv.subbed;
+          this.items[i].pvs[pv_type].hi_limit = pv.hi_limit;
+          this.items[i].pvs[pv_type].lo_limit = pv.lo_limit;
+        }
+      }
+    } catch {
+      console.warn("Notifications are not available");
+    }
 
     this.external_sensor = this.items.find((e) => e.name === "B, 15");
   },
