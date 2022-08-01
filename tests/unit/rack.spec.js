@@ -75,14 +75,14 @@ describe('RackCard.vue', () => {
     expect(wrapper.find(".v-card").find(".v-list").findAll("span .v-chip__content").at(0).text()).toMatch("22 C");
   })
 
-  it('configuration is disabled for unauthenticated users', () => {
+  it('disables configuration for unauthenticated users', () => {
     const wrapper = mountFunction();
     const button = wrapper.find(".v-card").find(".v-card__title").find(".v-dialog__container").find(".v-btn--disabled");
 
     expect(button.exists()).toBe(true);
   })
 
-  it('configuration is enabled for authenticated users', () => {
+  it('enables configuration for authenticated users', () => {
     store.commit("setAccount", true);
     const wrapper = mountFunction();
     const button = wrapper.find(".v-card").find(".v-card__title").find(".v-dialog__container").find(".v-btn--disabled");
@@ -90,7 +90,7 @@ describe('RackCard.vue', () => {
     expect(button.exists()).toBe(false);
   })
 
-  it('chips point to valid Archiver link', async () => {
+  it('sets chip links to valid Archiver URLs', async () => {
     let item = default_item;
     const wrapper = mountFunction();
 
@@ -102,7 +102,7 @@ describe('RackCard.vue', () => {
     expect(chip.attributes().href).toBe("https://ais-eng-srv-la.cnpem.br/archiver-viewer/?pv=960E1:CO-SIMAR-01:Temp-Mon");
   })
 
-  it('shortcut to plot all PVs displays right PVs', async () => {
+  it('links to right PVs in graph shortcut', async () => {
     window.open = jest.fn();
 
     const wrapper = mountFunction();
