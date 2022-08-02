@@ -1,16 +1,10 @@
 <template>
   <v-col>
-    <v-menu
-      v-if="$store.state.account"
-      bottom
-      min-width="300px"
-      rounded
-      offset-y
-    >
+    <v-menu v-if="user.account" bottom min-width="300px" rounded offset-y>
       <template v-slot:activator="{ on }">
         <v-badge
-          :content="$store.state.notification_count"
-          :value="$store.state.notification_count"
+          :content="user.notificationCount"
+          :value="user.notificationCount"
           color="red"
           overlap
           offset-x="25px"
@@ -36,7 +30,7 @@
         </v-list-item>
         <v-divider />
         <v-list-item
-          v-for="notification of $store.state.notifications"
+          v-for="notification of user.notifications"
           :key="notification.oid"
         >
           <v-list-item-content>
@@ -51,7 +45,7 @@
             </v-btn>
           </v-list-item-action>
         </v-list-item>
-        <v-list-item v-if="!$store.state.notification_count">
+        <v-list-item v-if="user.notificationCount == 0">
           <v-list-item-subtitle>No notifications received</v-list-item-subtitle>
         </v-list-item>
       </v-list>
@@ -59,32 +53,23 @@
   </v-col>
 </template>
 
-<script>
+<script setup lang="ts">
 import { mdiBell, mdiClose, mdiBroom } from "@mdi/js";
-import NotificationDialog from "./NotificationDialog.vue";
+import NotificationDialog from "./NotificationDialog";
+import { useUserStore } from "../stores/user";
+import { sendCommand } from "@/utils";
 
-export default {
-  data() {
-    return {
-      mdiBell,
-      mdiClose,
-      mdiBroom,
-    };
-  },
-  components: { NotificationDialog },
-  methods: {
-    async remove_notification(oid) {
-      await this.send_command(`notification?oid=${oid}`, "DELETE");
-      this.$store.commit("updateNotifications");
-    },
-    async clear_notifications() {
-      await this.send_command(
-        "notification?" +
-          this.$store.state.notifications.map((n) => `oid=${n.oid}`).join("&"),
-        "DELETE"
-      );
-      this.$store.commit("updateNotifications");
-    },
-  },
-};
+const user = useUserStore();
+
+async function remove_notification(oid: string) {
+  await sendCommand(`notification?oid=${oid}`, "DELETE");
+  user.updateNotifications();
+}
+async function clear_notifications() {
+  await sendCommand(
+    "notification?" + user.notifications.map((n) => `oid=${n.oid}`).join("&"),
+    "DELETE"
+  );
+  user.updateNotifications();
+}
 </script>

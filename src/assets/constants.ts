@@ -1,12 +1,12 @@
 export const EMPTY_PVS = {
-    Temperature: {
+    "Temperature": {
         name: "",
         value: "?",
         hi_limit: 30,
         lo_limit: 10,
         subscribed: false,
     },
-    Pressure: {
+    "Pressure": {
         name: "",
         value: "?",
         hi_limit: 1000,
@@ -20,49 +20,49 @@ export const EMPTY_PVS = {
         lo_limit: "",
         subscribed: false,
     },
-    Leak: {
+    "Leak": {
         name: "",
         value: "?",
         hi_limit: "",
         lo_limit: "",
         subscribed: false,
     },
-    Humidity: {
+    "Humidity": {
         name: "",
         value: "?",
         hi_limit: 70,
         lo_limit: 30,
         subscribed: false,
     },
-    Voltage: {
+    "Voltage": {
         name: "",
         value: "?",
         hi_limit: 340,
         lo_limit: 90,
         subscribed: false,
     },
-    Current: {
+    "Current": {
         name: "",
         values: ["?", "?", "?", "?", "?", "?", "?"],
         hi_limit: 0,
         lo_limit: 20,
         subscribed: [false, false, false, false, false, false, false],
     },
-    Glitches: {
+    "Glitches": {
         name: "",
         value: "?",
         hi_limit: 90,
         lo_limit: 0,
         subscribed: false,
     },
-    PFactor: {
+    "PFactor": {
         name: "",
         value: "?",
         hi_limit: 0.1,
         lo_limit: 0.9,
         subscribed: false,
     },
-    Frequency: {
+    "Frequency": {
         name: "",
         value: "?",
         hi_limit: 70,

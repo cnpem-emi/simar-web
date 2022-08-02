@@ -1,3 +1,4 @@
+/* eslint no-redeclare: 0 */  // --> OFF
 /*
       <v-select
           v-on:change='$emit("desc", $event)'
@@ -26,7 +27,7 @@ jlab.contextPrefix = jlab.contextPrefix || '';
 
     function CustomEvent(event, params) {
         params = params || { bubbles: false, cancelable: false, detail: undefined };
-        var evt = document.createEvent('CustomEvent');
+        const evt = document.createEvent('CustomEvent');
         evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
         return evt;
     }
@@ -38,12 +39,12 @@ jlab.contextPrefix = jlab.contextPrefix || '';
 /* END IE CustomEvent POLYFILL */
 
 jlab.epics2web.ClientConnection = function (options) {
-    var protocol = 'ws:';
+    let protocol = 'ws:';
     if (window.location.protocol === 'https:') {
         protocol = 'wss:';
     }
 
-    var defaultOptions = {
+    const defaultOptions = {
         url: protocol + "//" + window.location.host + jlab.contextPrefix + "/epics2web/monitor",
         autoOpen: true, /* Will automatically connect to socket immediately instead of waiting for open function to be called */
         autoReconnect: true, /* If socket is closed, will automatically reconnect after reconnectWaitMillis */
@@ -60,7 +61,7 @@ jlab.epics2web.ClientConnection = function (options) {
         options = {};
     }
 
-    for (var key in defaultOptions) {
+    for (const key in defaultOptions) {
         if (typeof options[key] !== 'undefined') {
             this[key] = options[key];
         } else {
@@ -69,15 +70,16 @@ jlab.epics2web.ClientConnection = function (options) {
     }
 
     // Private variables
-    var socket = null,
-        eventElem = document.createElement('div'),
+    let socket = null,
         lastUpdated = null,
-        self = this,
         livenessTimer = null,
         reconnecting = false;
 
+    const eventElem = document.createElement('div'),
+        self = this;
+
     // Private functions
-    var doPingWithTimer = function () {
+    const doPingWithTimer = function () {
         /*console.log('pingWithTimer');*/
         if (socket !== null && socket.readyState === WebSocket.OPEN) {
             self.ping();
@@ -144,7 +146,7 @@ jlab.epics2web.ClientConnection = function (options) {
     // Public functions
     this.open = function () {
         if (socket === null || socket.readyState === WebSocket.CLOSED) {
-            let event = new CustomEvent('connecting');
+            const event = new CustomEvent('connecting');
             eventElem.dispatchEvent(event);
 
             let u = this.url;
@@ -159,7 +161,7 @@ jlab.epics2web.ClientConnection = function (options) {
                 console.log("server connection error");
                 console.log(_event);
 
-                let event = new CustomEvent('error');
+                const event = new CustomEvent('error');
                 eventElem.dispatchEvent(event);
             };
 
@@ -167,7 +169,7 @@ jlab.epics2web.ClientConnection = function (options) {
                 console.log("server connection closed");
                 console.log(_event.reason);
 
-                let event = new CustomEvent('close');
+                const event = new CustomEvent('close');
                 eventElem.dispatchEvent(event);
 
                 if (livenessTimer !== null) {
@@ -175,7 +177,7 @@ jlab.epics2web.ClientConnection = function (options) {
                     livenessTimer = null;
                 }
 
-                var isClosed = socket === null || socket.readyState === WebSocket.CLOSED;
+                const isClosed = socket === null || socket.readyState === WebSocket.CLOSED;
                 if (self.autoReconnect && !reconnecting && isClosed) {
                     /*console.log('attempting to reconnect after delay');*/
                     reconnecting = true;
@@ -198,27 +200,27 @@ jlab.epics2web.ClientConnection = function (options) {
                 }
 
                 lastUpdated = new Date();
-                var json = JSON.parse(_event.data);
+                const json = JSON.parse(_event.data);
                 json.date = lastUpdated;
                 if (json.type === 'update') {
-                    let event = new CustomEvent('update', { 'detail': json });
+                    const event = new CustomEvent('update', { 'detail': json });
                     eventElem.dispatchEvent(event);
                 } else if (json.type === 'info') {
-                    let event = new CustomEvent('info', { 'detail': json });
+                    const event = new CustomEvent('info', { 'detail': json });
                     eventElem.dispatchEvent(event);
                 } else if (json.type === 'pong') {
-                    let event = new CustomEvent('pong');
+                    const event = new CustomEvent('pong');
                     eventElem.dispatchEvent(event);
                 }
 
-                let event = new CustomEvent('message');
+                const event = new CustomEvent('message');
                 eventElem.dispatchEvent(event, { 'detail': json });
             };
 
             socket.onopen = function () {
                 lastUpdated = new Date();
 
-                let event = new CustomEvent('open');
+                const event = new CustomEvent('open');
                 eventElem.dispatchEvent(event);
             };
         } else {
@@ -242,7 +244,7 @@ jlab.epics2web.ClientConnection = function (options) {
 
     this.monitorPvs = function (pvs) {
         if (self.chunkedRequestPvsCount > 0) {
-            var i, j, chunk;
+            let i, j, chunk;
             for (i = 0, j = pvs.length; i < j; i += self.chunkedRequestPvsCount) {
                 chunk = pvs.slice(i, i + self.chunkedRequestPvsCount);
                 this.monitorPvsChunk(chunk);
@@ -253,13 +255,13 @@ jlab.epics2web.ClientConnection = function (options) {
     };
 
     this.monitorPvsChunk = function (pvs) {
-        var msg = { type: 'monitor', pvs: pvs };
+        const msg = { type: 'monitor', pvs: pvs };
         socket.send(JSON.stringify(msg));
     };
 
     this.clearPvs = function (pvs) {
         if (self.chunkedRequestPvsCount > 0) {
-            var i, j, chunk;
+            let i, j, chunk;
             for (i = 0, j = pvs.length; i < j; i += self.chunkedRequestPvsCount) {
                 chunk = pvs.slice(i, i + self.chunkedRequestPvsCount);
                 this.clearPvsChunk(chunk);
@@ -270,12 +272,12 @@ jlab.epics2web.ClientConnection = function (options) {
     };
 
     this.clearPvsChunk = function (pvs) {
-        var msg = { type: 'clear', pvs: pvs };
+        const msg = { type: 'clear', pvs: pvs };
         socket.send(JSON.stringify(msg));
     };
 
     this.ping = function () {
-        var msg = { type: 'ping' };
+        const msg = { type: 'ping' };
         socket.send(JSON.stringify(msg));
     };
 
@@ -299,7 +301,7 @@ jlab.epics2web.ClientConnection.prototype.oninfo = function () { };
 jlab.epics2web.ClientConnection.prototype.onpong = function () { };
 
 jlab.epics2web.isNumericEpicsType = function (datatype) {
-    var isNumeric;
+    let isNumeric;
 
     switch (datatype) {
         case 'DBR_DOUBLE':
