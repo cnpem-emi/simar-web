@@ -115,14 +115,7 @@ import {
   mdiCog,
   mdiPowerPlugOutline,
 } from "@mdi/js";
-import {
-  computed,
-  ref,
-  watch,
-  defineProps,
-  getCurrentInstance,
-  defineEmits,
-} from "vue";
+import { computed, ref, watch, getCurrentInstance, defineEmits } from "vue";
 import { useInternalStore } from "@/stores/internal";
 import { useUserStore } from "@/stores/user";
 import Item from "@/models/item";

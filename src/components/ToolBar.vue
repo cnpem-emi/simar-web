@@ -22,7 +22,6 @@
           flat
           solo-inverted
           hide-details
-          v-model="sortBy"
           :items="props.settings.keys"
           :prepend-inner-icon="mdiSort"
           label="Sort by"
@@ -91,13 +90,12 @@ import {
   mdiSort,
   mdiMenu,
 } from "@mdi/js";
-import { ref, defineProps } from "vue";
+import { ref } from "vue";
 import Settings from "@/models/settings";
 
 const props = defineProps<{
   settings: Settings;
 }>();
 
-const sortBy = props.settings.sort_by;
 const dropdown = ref(false);
 </script>

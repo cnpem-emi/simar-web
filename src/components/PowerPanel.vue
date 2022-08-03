@@ -93,7 +93,7 @@
 
 <script setup lang="ts">
 import Item from "@/models/item";
-import { defineProps, ref } from "vue";
+import { ref } from "vue";
 import { mdiAlertCircle, mdiPowerPlugOutline, mdiMenuDown } from "@mdi/js";
 import { useInternalStore } from "@/stores/internal";
 

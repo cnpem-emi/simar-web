@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import Item from "@/models/item";
-import { ref, onMounted, computed, defineProps, defineEmits } from "vue";
+import { ref, onMounted, computed, defineEmits } from "vue";
 
 const emit = defineEmits(["change"]);
 const props = defineProps<{
@@ -52,10 +52,8 @@ const range = computed({
     return [lo.value, hi.value];
   },
   set(input: number[]): void {
-    range[0] = input[0];
-    range[1] = input[1];
-
-    console.log(range);
+    range.value[0] = input[0];
+    range.value[1] = input[1];
 
     emit("change", input);
   },

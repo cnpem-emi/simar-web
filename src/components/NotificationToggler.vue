@@ -13,7 +13,6 @@
 import { useInternalStore } from "@/stores/internal";
 import { b64_uint8, sendCommand } from "@/utils";
 import { mdiBell } from "@mdi/js";
-import { defineProps, defineEmits } from "vue";
 
 const internal = useInternalStore();
 

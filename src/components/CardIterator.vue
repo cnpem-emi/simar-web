@@ -141,7 +141,7 @@ import {
   mdiWaterPercent,
   mdiGauge,
 } from "@mdi/js";
-import { computed, ref, onMounted, defineProps } from "vue";
+import { computed, ref, onMounted } from "vue";
 import Item from "../models/item";
 import Settings from "@/models/settings";
 import { sendCommand } from "../utils";

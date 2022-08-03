@@ -38,7 +38,7 @@
             </v-slide-x-reverse-transition>
             <v-chip
               class="align-end"
-              :color="get_pv_color(item, key)"
+              :color="getPvColor(item, key)"
               text-color="white"
               :href="`https://${internal.url}/archiver-viewer/?pv=${item.pvs[key].name}`"
               target="_blank"
@@ -61,7 +61,6 @@ import PowerPanel from "./PowerPanel";
 import ConfigDialog from "./ConfigDialog";
 import NotificationToggler from "./NotificationToggler";
 import { mdiChartAreasplineVariant } from "@mdi/js";
-import { defineProps } from "vue";
 import { useInternalStore } from "@/stores/internal";
 import Item from "@/models/item";
 
@@ -72,7 +71,7 @@ const props = defineProps<{
   filtered_keys: string[];
 }>();
 
-function get_pv_color(item: Item, key: string) {
+function getPvColor(item: Item, key: string) {
   const value = item.pvs[key].value;
 
   if (value === "?") return "gray";
@@ -107,4 +106,6 @@ function display_archiver() {
     "_blank"
   );
 }
+
+defineExpose({getPvColor});
 </script>
