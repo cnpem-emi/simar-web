@@ -140,13 +140,6 @@ import {
   mdiWaterPercent,
   mdiGauge,
 } from "@mdi/js";
-<<<<<<< HEAD
-import { computed, ref, onMounted } from "vue";
-import Item from "../models/item";
-import Settings from "@/models/settings";
-import { sendCommand } from "../utils";
-=======
->>>>>>> parent of 9b74067 (Port to TypeScript)
 
 async function parse_json(self) {
   return new Promise((resolve) => {

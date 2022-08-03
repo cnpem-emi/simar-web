@@ -22,12 +22,8 @@
           flat
           solo-inverted
           hide-details
-<<<<<<< HEAD
-          :items="props.settings.keys"
-=======
           v-model="sort_by"
           :items="this.settings.keys"
->>>>>>> parent of 9b74067 (Port to TypeScript)
           :prepend-inner-icon="mdiSort"
           label="Sort by"
         ></v-select>
