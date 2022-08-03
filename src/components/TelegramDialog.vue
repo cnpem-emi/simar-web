@@ -81,7 +81,8 @@
               </v-card-text>
               <v-card-text>
                 <i
-                  >Hello, <b>{{ user.account.name.split(" ")[0] }}</b
+                  >Hello,
+                  <b>{{ this.$store.state.account.name.split(" ")[0] }}</b
                   >! If you've received this message, then you've configured
                   SIMAR's EPICSTEL integration correctly. For more information
                   on how to use this bot, check out /help.</i
@@ -107,29 +108,28 @@
   </v-dialog>
 </template>
 
-<script setup lang="ts">
-import { useInternalStore } from "@/stores/internal";
-import { useUserStore } from "@/stores/user";
-import { sendCommand } from "@/utils";
-import { ref } from "vue";
-
-const user = useUserStore();
-const internal = useInternalStore();
-
-const dialog = ref(false);
-const can_move = ref(true);
-const e1 = ref(1);
-const id = ref("");
-
-async function register() {
-  can_move.value = false;
-  const response = await sendCommand(`telegram/${id.value}`, "POST");
-  if (response.status !== 200) {
-    internal.showSnackbar("Invalid Telegram ID!");
-    id.value = "";
-  } else {
-    e1.value = 3;
-  }
-  can_move.value = true;
-}
+<script>
+export default {
+  data: function () {
+    return {
+      dialog: false,
+      can_move: true,
+      e1: 1,
+      id: "",
+    };
+  },
+  methods: {
+    async register() {
+      this.can_move = false;
+      const response = await this.send_command(`telegram/${this.id}`, "POST");
+      if (response.status !== 200) {
+        this.$store.commit("showSnackbar", `Invalid Telegram ID!`);
+        this.id = "";
+      } else {
+        this.e1 = 3;
+      }
+      this.can_move = true;
+    },
+  },
+};
 </script>

@@ -11,7 +11,7 @@
           small
           plain
           ><span class="text-truncate" style="max-width: 70px">{{
-            props.name
+            name
           }}</span></v-btn
         >
       </v-container>
@@ -27,7 +27,7 @@
           to you</span
         >
         <v-spacer />
-        <v-text-field v-model="new_name" :placeholder="props.name" dense />
+        <v-text-field v-model="new_name" :placeholder="name" dense />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -49,13 +49,17 @@
   </v-dialog>
 </template>
 
-<script setup lang="ts">
-import { ref } from "vue";
+<script>
+import { mdiPencil } from "@mdi/js";
 
-const props = defineProps<{
-  name: string;
-}>();
-
-const new_name = ref(name);
-const dialog = ref(false);
+export default {
+  props: ["name", "index"],
+  data: function () {
+    return {
+      mdiPencil,
+      new_name: name,
+      dialog: false,
+    };
+  },
+};
 </script>

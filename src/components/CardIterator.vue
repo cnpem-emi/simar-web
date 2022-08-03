@@ -4,9 +4,9 @@
       :items="filter_valid"
       :items-per-page.sync="items_per_page"
       :page.sync="page"
-      :search="settings.search"
-      :sort-by="settings.sort_by"
-      :sort-desc="settings.sort_desc"
+      :search="this.settings.search"
+      :sort-by="this.settings.sort_by"
+      :sort-desc="this.settings.sort_desc"
       :custom-sort="num_sort"
       loading="true"
       hide-default-footer
@@ -81,21 +81,21 @@
             <v-btn
               plain
               class="amb-val"
-              :href="`https://${internal.url}/archiver-viewer/?pv=${external_sensor.pvs.Temperature.name}`"
+              :href="`https://${$store.state.url}/archiver-viewer/?pv=${external_sensor.pvs.Temperature.name}`"
               ><v-icon dark>{{ mdiThermometer }}</v-icon
               >{{ external_sensor.pvs.Temperature.value }}</v-btn
             >
             <v-btn
               plain
               class="amb-val"
-              :href="`https://${internal.url}/archiver-viewer/?pv=${external_sensor.pvs.Pressure.name}`"
+              :href="`https://${$store.state.url}/archiver-viewer/?pv=${external_sensor.pvs.Pressure.name}`"
               ><v-icon dark>{{ mdiGauge }}</v-icon
               >{{ external_sensor.pvs.Pressure.value }}</v-btn
             >
             <v-btn
               plain
               class="amb-val"
-              :href="`https://${internal.url}/archiver-viewer/?pv=${external_sensor.pvs.Humidity.name}`"
+              :href="`https://${$store.state.url}/archiver-viewer/?pv=${external_sensor.pvs.Humidity.name}`"
               ><v-icon dark>{{ mdiWaterPercent }}</v-icon
               >{{ external_sensor.pvs.Humidity.value }}</v-btn
             >
@@ -128,11 +128,10 @@
   </v-container>
 </template>
 
-<script setup lang="ts">
-import * as consts from "../assets/constants";
-import * as e2w from "../assets/epics2web";
+<script>
+import * as consts from "../assets/constants.js";
+import * as e2w from "../assets/epics2web.js";
 import RackCard from "./RackCard";
-import { useInternalStore } from "@/stores/internal";
 import {
   mdiChevronRight,
   mdiChevronLeft,
@@ -141,29 +140,20 @@ import {
   mdiWaterPercent,
   mdiGauge,
 } from "@mdi/js";
+<<<<<<< HEAD
 import { computed, ref, onMounted } from "vue";
 import Item from "../models/item";
 import Settings from "@/models/settings";
 import { sendCommand } from "../utils";
+=======
+>>>>>>> parent of 9b74067 (Port to TypeScript)
 
-const internal = useInternalStore();
-
-const page = ref(1);
-const items_per_page = ref(8);
-const items = ref([]);
-let con: e2w.jlab.epics2web.ClientConnection;
-const external_sensor = ref<Item>({
-  pvs: consts.EMPTY_PVS,
-  name: "",
-  parent: "",
-});
-
-async function parse_json() {
+async function parse_json(self) {
   return new Promise((resolve) => {
     setTimeout(async () => {
       const response = await fetch("config.json");
       const data = await response.json();
-      let pvs: string[] = [];
+      let pvs = [];
       for (const [parent, children] of Object.entries(data.items)) {
         for (const sensor of children) {
           let pv_names = [];
@@ -185,7 +175,7 @@ async function parse_json() {
             pv_names = pv_names.concat(current_pv_names);
           }
 
-          items.value.push({
+          self.items.push({
             parent: parent,
             name: sensor.name,
             pvs: fill_template(sensor.pvs),
@@ -198,7 +188,7 @@ async function parse_json() {
   });
 }
 
-function get_type(pv: string) {
+function get_type(pv) {
   const pv_type = pv.split(":")[2];
   for (const probable_type of Object.keys(consts.EMPTY_PVS)) {
     if (pv_type.includes(probable_type)) return probable_type;
@@ -220,95 +210,117 @@ function fill_template(pvs) {
   return filled;
 }
 
-const props = defineProps<{
-  settings: Settings;
-}>();
+export default {
+  components: {
+    RackCard,
+  },
+  props: ["settings"],
+  data() {
+    return {
+      filter: {},
+      page: 1,
+      items_per_page: 8,
+      headers: [],
+      items: [],
+      con: undefined,
+      loading_pv: true,
+      external_sensor: {},
+      mdiChevronRight,
+      mdiChevronLeft,
+      mdiChevronDown,
+      mdiThermometer,
+      mdiGauge,
+      mdiWaterPercent,
+    };
+  },
+  computed: {
+    number_pages() {
+      return Math.ceil(this.items.length / this.items_per_page);
+    },
+    filtered_keys() {
+      return this.settings.keys.filter((key) => key !== "Name");
+    },
+    filter_valid() {
+      return this.items.filter((i) => i.pvs.Pressure.value !== "0 hPa");
+    },
+  },
+  methods: {
+    num_sort(items, index) {
+      items.sort((a, b) => {
+        if (index[0] === "Name")
+          return this.settings.sort_desc ? b.name > a.name : a.name > b.name;
 
-const number_pages = computed(() => {
-  return Math.ceil(items.value.length / items_per_page.value);
-});
+        const is_first = a.pvs[index[0]].value > b.pvs[index[0]].value;
+        return this.settings.sort_desc ? !is_first : is_first;
+      });
+      return items;
+    },
+    async get_pv_info() {
+      const response = await this.send_command("pvs", "GET");
+      return await response.json();
+    },
+    async update_sub(item, key) {
+      item.pvs[key].subscribed = !item.pvs[key].subscribed;
+    },
+    async update_limit(item, pvs) {
+      for (let pv of pvs) {
+        const pv_type = Object.keys(item.pvs).find(
+          (k) => item.pvs[k].name === pv.name
+        );
+        item.pvs[pv_type].hi_limit = pv.hi_limit;
+        item.pvs[pv_type].lo_limit = pv.lo_limit;
+      }
+    },
+    on_update(e) {
+      const pv_type = get_type(e.detail.pv);
+      let pv_name = e.detail.pv;
 
-const filtered_keys = computed(() => {
-  return props.settings.keys.filter((key) => key !== "Name");
-});
+      if (pv_type === "Current") pv_name = pv_name.replace(/CH[0-9]/, "CH?");
 
-const filter_valid = computed(() => {
-  return items.value.filter((i) => i.pvs.Pressure.value !== "0 hPa");
-});
+      let index = this.items.findIndex((i) => i.pvs[pv_type].name === pv_name);
 
-function num_sort(items: Item[], index: string) {
-  items.sort((a, b) => {
-    if (index[0] === "Name")
-      return props.settings.sort_desc ? b.name > a.name : a.name > b.name;
+      if (pv_type === "Rack Open" || pv_type === "Leak") {
+        // Rack door status
+        this.items[index].pvs[pv_type].value =
+          e.detail.value === 0 ? "No" : "Yes";
+      } else if (pv_type === "Current") {
+        this.items[index].pvs.Current.values[
+          parseInt(e.detail.pv.charAt(e.detail.pv.indexOf("CH") + 2))
+        ] = e.detail.value.toFixed(2) + consts.SYMBOLS[pv_type];
+      } else {
+        this.items[index].pvs[pv_type].value =
+          e.detail.value.toFixed(2) + consts.SYMBOLS[pv_type];
+      }
 
-    const is_first = a.pvs[index[0]].value > b.pvs[index[0]].value;
-    return props.settings.sort_desc ? !is_first : is_first;
-  });
-  return items;
-}
-async function get_pv_info() {
-  const response = await sendCommand("pvs", "GET");
-  return await response.json();
-}
-async function update_sub(item: Item, key: string) {
-  item.pvs[key].subscribed = !item.pvs[key].subscribed;
-}
-async function update_limit(item: Item, pvs) {
-  for (let pv of pvs) {
-    const pv_type = Object.keys(item.pvs).find(
-      (k) => item.pvs[k].name === pv.name
-    );
-    item.pvs[pv_type].hi_limit = pv.hi_limit;
-    item.pvs[pv_type].lo_limit = pv.lo_limit;
-  }
-}
+      this.$forceUpdate();
+    },
+  },
+  async created() {
+    var options = {
+      url: "wss://" + this.$store.state.url + "/epics2web/monitor",
+    };
+    this.con = new e2w.jlab.epics2web.ClientConnection(options);
 
-const onUpdate = (e) => {
-  const pv_type = get_type(e.detail.pv);
-  let pv_name = e.detail.pv;
+    this.con.onopen = this.con.monitorPvs(await parse_json(this));
+    this.con.onupdate = this.on_update;
 
-  if (pv_type === "Current") pv_name = pv_name.replace(/CH[0-9]/, "CH?");
-
-  let index = items.value.findIndex((i) => i.pvs[pv_type].name === pv_name);
-
-  if (pv_type === "Rack Open" || pv_type === "Leak") {
-    // Rack door status
-    items.value[index].pvs[pv_type].value = e.detail.value === 0 ? "No" : "Yes";
-  } else if (pv_type === "Current") {
-    items.value[index].pvs.Current.values[
-      parseInt(e.detail.pv.charAt(e.detail.pv.indexOf("CH") + 2))
-    ] = e.detail.value.toFixed(2) + consts.SYMBOLS[pv_type];
-  } else {
-    items.value[index].pvs[pv_type].value =
-      e.detail.value.toFixed(2) + consts.SYMBOLS[pv_type];
-  }
-};
-
-onMounted(async () => {
-  var options = {
-    url: `wss://${internal.url}/epics2web/monitor`,
-  };
-  con = new e2w.jlab.epics2web.ClientConnection(options);
-
-  con.onopen = con.monitorPvs(await parse_json());
-  con.onupdate = onUpdate;
-
-  //try {
-  for (let pv of await get_pv_info()) {
-    const pv_type = get_type(pv.name);
-    const i = items.value.findIndex((i) => i.pvs[pv_type].name === pv.name);
-    if (i > -1) {
-      items.value[i].pvs[pv_type].subscribed = pv.subbed;
-      items.value[i].pvs[pv_type].hi_limit = pv.hi_limit;
-      items.value[i].pvs[pv_type].lo_limit = pv.lo_limit;
+    try {
+      for (let pv of await this.get_pv_info()) {
+        const pv_type = get_type(pv.name);
+        const i = this.items.findIndex((i) => i.pvs[pv_type].name === pv.name);
+        if (i > -1) {
+          this.items[i].pvs[pv_type].subscribed = pv.subbed;
+          this.items[i].pvs[pv_type].hi_limit = pv.hi_limit;
+          this.items[i].pvs[pv_type].lo_limit = pv.lo_limit;
+        }
+      }
+    } catch {
+      console.warn("Notifications are not available");
     }
-  }
-  //} catch {
-  //  console.warn("Notifications are not available");
-  //}
 
-  external_sensor.value = items.value.find((e) => e.name === "B, 15");
-});
+    this.external_sensor = this.items.find((e) => e.name === "B, 15");
+  },
+};
 </script>
 
 <style scoped>

@@ -1,11 +1,17 @@
 <template>
   <v-col>
-    <v-menu v-if="user.account" bottom min-width="300px" rounded offset-y>
+    <v-menu
+      v-if="$store.state.account"
+      bottom
+      min-width="300px"
+      rounded
+      offset-y
+    >
       <template v-slot:activator="{ on }">
         <v-btn icon x-large v-on="on">
           <v-avatar color="indigo" size="48">
             <span class="white--text text-h6">{{
-              getInitials(user.account)
+              $store.state.account.initials
             }}</span>
           </v-avatar>
         </v-btn>
@@ -15,11 +21,11 @@
           <div class="mx-auto text-center">
             <v-avatar color="indigo" style="margin-bottom: 10px">
               <span class="white--text text-h6">{{
-                getInitials(user.account)
+                $store.state.account.initials
               }}</span>
             </v-avatar>
-            <h3>{{ user.account.name }}</h3>
-            <p class="text-caption mt-1">{{ user.account.username }}</p>
+            <h3>{{ $store.state.account.name }}</h3>
+            <p class="text-caption mt-1">{{ $store.state.account.username }}</p>
             <v-divider class="my-3"></v-divider>
             <v-btn @click="logout" depressed text> Disconnect </v-btn>
           </div>
@@ -36,7 +42,7 @@
     >
       <template v-slot:activator="{ on }">
         <v-btn
-          :disabled="!user.msalConfig.auth.authority"
+          :disabled="!$store.state.msalConfig.auth.authority"
           @click="login"
           icon
           x-large
@@ -49,43 +55,51 @@
   </v-col>
 </template>
 
-<script setup lang="ts">
+<script>
 import { mdiLogin } from "@mdi/js";
-import { AccountInfo } from "@azure/msal-browser";
-import { useUserStore } from "../stores/user";
-import { useInternalStore } from "../stores/internal";
-import { sendCommand } from "@/utils";
 
-const user = useUserStore();
-const internal = useInternalStore();
-
-function getInitials(account: AccountInfo) {
-  if (account === undefined) return "";
+function getInitials(account) {
   return account.name.split(" ")[0].substring(0, 1);
 }
 
-async function login() {
-  await user.msalInstance
-    .loginPopup({ scopes: ["User.Read"] })
-    .then(() => {
-      const accounts = user.msalInstance.getAllAccounts();
-      user.account = accounts[0];
-      internal.showSnackbar(`Logged in as ${user.account.username}`);
+export default {
+  data() {
+    return {
+      mdiLogin,
+    };
+  },
+  methods: {
+    async login() {
+      await this.$store.state.msalInstance
+        .loginPopup({ scopes: ["User.Read"] })
+        .then(() => {
+          const accounts = this.$store.state.msalInstance.getAllAccounts();
+          accounts[0].initials = getInitials(accounts[0]);
+          this.$store.commit("setAccount", accounts[0]);
+        })
+        .catch((error) => {
+          console.error(`Error during authentication: ${error}`);
+        });
+      this.$store.commit(
+        "showSnackbar",
+        `Logged in as ${this.$store.state.account.username}`
+      );
       window.location.reload();
-    })
-    .catch((error) => {
-      console.error(`Error during authentication: ${error}`);
-    });
-}
+    },
+    async logout() {
+      let subscription =
+        await this.$store.state.sw.pushManager.getSubscription();
 
-async function logout() {
-  let subscription = await internal.sw.pushManager.getSubscription();
+      if (subscription)
+        await this.send_command(
+          `devices?endpoints=${subscription.endpoint}`,
+          "DELETE"
+        );
 
-  if (subscription)
-    await sendCommand(`devices?endpoints=${subscription.endpoint}`, "DELETE");
-
-  await user.msalInstance.logout({}).catch((error) => {
-    console.error(error);
-  });
-}
+      await this.$store.state.msalInstance.logout({}).catch((error) => {
+        console.error(error);
+      });
+    },
+  },
+};
 </script>

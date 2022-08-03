@@ -12,7 +12,6 @@ function receive_push(event) {
         image: image,
     };
     channel.postMessage({ title: "Message Received" });
-    console.log("Message received");
 
     event.waitUntil(self.registration.showNotification(title, options));
 }

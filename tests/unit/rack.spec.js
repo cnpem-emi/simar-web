@@ -2,30 +2,45 @@ import Vuetify from 'vuetify'
 import { createLocalVue, mount } from '@vue/test-utils'
 import RackCard from '@/components/RackCard.vue'
 import { EMPTY_PVS } from '@/assets/constants'
-import { createTestingPinia } from '@pinia/testing'
-import { useUserStore } from '@/stores/user'
-import { defineStore, PiniaVuePlugin } from 'pinia'
+import Vuex from 'vuex'
+
 
 describe('RackCard.vue', () => {
   const keys = ["Temperature", "Pressure", "Rack Open", "Humidity", "Leak"]
   const pvs = Object.assign({}, EMPTY_PVS, {Temperature: {name: "960E1:CO-SIMAR-01:Temp-Mon", value: "20 C"}, Pressure: {name: "960E1:CO-SIMAR-01:Pressure-Mon", value: "900 hPa"}});
 
   const default_item = { name: "Test", parent: "Test", pv_names: ["960E1:CO-SIMAR-01:Temp-Mon", "960E1:CO-SIMAR-01:Pressure-Mon"], pvs: pvs };
-  const localVue = createLocalVue();
-  localVue.use(PiniaVuePlugin);
-  let vuetify;
-  let store;
+  const localVue = createLocalVue()
+  localVue.use(Vuex);
+  let vuetify
+  let store
 
   beforeEach(() => {
     vuetify = new Vuetify()
+
+    store = new Vuex.Store({
+      state: {
+        account: undefined,
+        url: "ais-eng-srv-la.cnpem.br",
+      },
+      mutations: {
+        setAccount(state, account) {
+          state.account = account;
+        },
+      }
+    })
   })
 
   const mountFunction = options => {
     return mount(RackCard, {
       localVue,
       vuetify,
+<<<<<<< HEAD
       pinia: createTestingPinia({initialState: {user: {account: undefined}, internal: {url: "pudim.com.br"}}}),
       propsData: { item: default_item, filtered_keys: keys},
+=======
+      store,
+>>>>>>> parent of 9b74067 (Port to TypeScript)
       mocks: {
         $vuetify: { breakpoint: {} },
         item: default_item,
@@ -55,7 +70,7 @@ describe('RackCard.vue', () => {
   })
 
   it('modifies PV values in real time', async () => {
-    const item = default_item;
+    let item = default_item;
     const wrapper = mountFunction();
 
     expect(wrapper.find(".v-card").find(".v-list").findAll("span .v-chip__content").at(0).text()).toMatch("20 C");
@@ -75,7 +90,7 @@ describe('RackCard.vue', () => {
   })
 
   it('enables configuration for authenticated users', () => {
-    store.account = true;
+    store.commit("setAccount", true);
     const wrapper = mountFunction();
     const button = wrapper.find(".v-card").find(".v-card__title").find(".v-dialog__container").find(".v-btn--disabled");
 
@@ -83,7 +98,7 @@ describe('RackCard.vue', () => {
   })
 
   it('sets chip links to valid Archiver URLs', async () => {
-    const item = default_item;
+    let item = default_item;
     const wrapper = mountFunction();
 
     item.pvs.Temperature.name = "960E1:CO-SIMAR-01:Temp-Mon";

@@ -107,88 +107,99 @@
   </v-dialog>
 </template>
 
-<script setup lang="ts">
+<script>
 import TelegramDialog from "./TelegramDialog";
 import { mdiLinkVariantRemove, mdiCog } from "@mdi/js";
-import { ref, watch } from "vue";
-import { useInternalStore } from "@/stores/internal";
-import { b64_uint8, sendCommand } from "@/utils";
 
-const internal = useInternalStore();
-
-const dialog = ref(false);
-const headers = ref([
-  {
-    value: "host",
-    text: "Host",
+export default {
+  data: function () {
+    return {
+      dialog: false,
+      headers: [
+        {
+          value: "host",
+          text: "Host",
+        },
+        {
+          value: "user_agent",
+          text: "User Agent",
+        },
+        { value: "actions", sortable: false },
+      ],
+      telegram_id: "Unknown",
+      mdiLinkVariantRemove,
+      mdiCog,
+      items: [],
+    };
   },
-  {
-    value: "user_agent",
-    text: "User Agent",
-  },
-  { value: "actions", sortable: false },
-]);
-const telegram_id = ref("Unknown");
-const items = ref([]);
+  components: { TelegramDialog },
+  methods: {
+    async unsubscribe_all() {
+      const subscription =
+        await this.$store.state.sw.pushManager.getSubscription();
 
-async function unsubscribe_all() {
-  const subscription = await internal.sw.pushManager.getSubscription();
-
-  if (subscription) {
-    await subscription.unsubscribe();
-  }
-
-  await sendCommand("pvs", "DELETE");
-  window.location.reload();
-}
-async function update_devices() {
-  const response = await sendCommand("devices", "GET");
-  const data = await response.json();
-  items.value = data.devices;
-  telegram_id.value = data.telegram_id || "Unknown";
-}
-async function delete_device(item) {
-  await sendCommand(`devices?endpoints=${item.endpoint}`, "DELETE");
-  update_devices();
-}
-async function add_device() {
-  if ("granted" === (await Notification.requestPermission())) {
-    let subscription = {};
-    try {
-      await internal.sw.ready;
-
-      subscription = await internal.sw.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await internal.sw.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: b64_uint8(process.env.VUE_APP_PUSH_KEY),
-        });
+      if (subscription) {
+        await subscription.unsubscribe();
       }
-    } catch (err) {
-      internal.showSnackbar(
-        "A certificate error has occurred and we couldn't set up notifications for your browser. You can enable browser notifications by allowing insecure content in the site's permissions."
-      );
-    }
-    subscription = subscription.toJSON();
 
-    await sendCommand("subscribe", "POST", {
-      endpoint: subscription.endpoint,
-      auth: subscription.keys.auth,
-      p256dh: subscription.keys.p256dh,
-      host: window.location.host,
-      user_agent: navigator.userAgent,
-    });
-    await update_devices();
-  }
-}
-async function delete_telegram() {
-  await sendCommand(`telegram/${telegram_id.value}`, "DELETE");
-  await update_devices();
-}
+      await this.send_command("pvs", "DELETE");
+      window.location.reload();
+    },
+    async update_devices() {
+      const response = await this.send_command("devices", "GET");
+      const data = await response.json();
+      this.items = data.devices;
+      this.telegram_id = data.telegram_id || "Unknown";
+    },
+    async delete_device(item) {
+      await this.send_command(`devices?endpoints=${item.endpoint}`, "DELETE");
+      this.update_devices();
+    },
+    async add_device() {
+      if ("granted" === (await Notification.requestPermission())) {
+        let subscription = {};
+        try {
+          await this.$store.state.sw.ready;
 
-watch(dialog, () => {
-  update_devices();
-});
+          subscription =
+            await this.$store.state.sw.pushManager.getSubscription();
+          if (!subscription) {
+            subscription = await this.$store.state.sw.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: this.b64_uint8(
+                process.env.VUE_APP_PUSH_KEY
+              ),
+            });
+          }
+        } catch (err) {
+          this.$store.commit(
+            "showSnackbar",
+            "A certificate error has occurred and we couldn't set up notifications for your browser. You can enable browser notifications by allowing insecure content in the site's permissions."
+          );
+        }
+        subscription = subscription.toJSON();
+
+        await this.send_command("subscribe", "POST", {
+          endpoint: subscription.endpoint,
+          auth: subscription.keys.auth,
+          p256dh: subscription.keys.p256dh,
+          host: window.location.host,
+          user_agent: navigator.userAgent,
+        });
+        await this.update_devices();
+      }
+    },
+    async delete_telegram() {
+      await this.send_command(`telegram/${this.telegram_id}`, "DELETE");
+      await this.update_devices();
+    },
+  },
+  watch: {
+    dialog() {
+      this.update_devices();
+    },
+  },
+};
 </script>
 
 <style scoped>
