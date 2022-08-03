@@ -35,12 +35,7 @@ describe('RackCard.vue', () => {
     return mount(RackCard, {
       localVue,
       vuetify,
-<<<<<<< HEAD
-      pinia: createTestingPinia({initialState: {user: {account: undefined}, internal: {url: "pudim.com.br"}}}),
-      propsData: { item: default_item, filtered_keys: keys},
-=======
       store,
->>>>>>> parent of 9b74067 (Port to TypeScript)
       mocks: {
         $vuetify: { breakpoint: {} },
         item: default_item,
