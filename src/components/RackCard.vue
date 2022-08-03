@@ -76,7 +76,7 @@ export default {
     NotificationToggler,
   },
   methods: {
-    get_pv_color(item, key) {
+    getPvColor(item, key) {
       const value = item.pvs[key].value;
 
       if (value === "?") return "gray";

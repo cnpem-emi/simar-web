@@ -36,10 +36,9 @@ describe('RackCard.vue', () => {
       localVue,
       vuetify,
       store,
+      propsData: {item: default_item, filtered_keys: keys},
       mocks: {
         $vuetify: { breakpoint: {} },
-        item: default_item,
-        filtered_keys: keys
       },
       ...options
     })
