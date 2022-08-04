@@ -68,7 +68,6 @@ describe('RackCard.vue', () => {
     const wrapper = mountFunction();
 
     expect(wrapper.find(".v-card").find(".v-list").findAll("span .v-chip__content").at(0).text()).toMatch("20 C");
-    console.log(wrapper.html());
 
     item.pvs.Temperature.value = "22 C";
     await wrapper.setProps(item);
