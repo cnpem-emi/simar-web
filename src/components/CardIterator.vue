@@ -225,7 +225,7 @@ const props = defineProps<{
 }>();
 
 const number_pages = computed(() => {
-  return Math.ceil(items.value.length / items_per_page.value);
+  return Math.ceil(filtered_keys.value.length / items_per_page.value);
 });
 
 const filtered_keys = computed(() => {
