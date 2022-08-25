@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import Item from "@/models/item";
-import { ref, onMounted, computed, defineEmits } from "vue";
+import { ref, onMounted, computed } from "vue";
 
 const emit = defineEmits(["change"]);
 const props = defineProps<{
