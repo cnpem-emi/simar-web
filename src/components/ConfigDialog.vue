@@ -68,7 +68,7 @@
                         {{ item.pvs.Voltage.value }}</v-list-item-subtitle
                       >
                       <v-list-item-subtitle style="text-align: center">
-                        {{ item.pvs.Current.values[key] }}</v-list-item-subtitle
+                        {{ item.pvs.Current.value[key] }}</v-list-item-subtitle
                       >
                     </v-col>
                     <v-col>
@@ -187,7 +187,8 @@ async function apply_changes() {
     });
   }
 
-  await sendCommand(`outlets/SIMAR:${parent_name.value}`, "POST", newOutlets);
+  if (!loading_pv.value) 
+    await sendCommand(`outlets/SIMAR:${parent_name.value}`, "POST", newOutlets);
 
   internal.showSnackbar(
     `Successfully applied settings to ${props.item.parent}!`
@@ -200,13 +201,13 @@ async function apply_changes() {
 function get_color(index: number) {
   if (
     props.item.pvs.Voltage.value === "?" ||
-    props.item.pvs.Current.values[index] === "?"
+    props.item.pvs.Current.value[index] === "?"
   )
     return "grey";
   if (
     props.item.pvs.Voltage.value > props.item.v_hi ||
     props.item.pvs.Voltage.value < props.item.v_lo ||
-    props.item.pvs.Current.values[index] > 20
+    props.item.pvs.Current.value[index] > 20
   )
     return "red";
 

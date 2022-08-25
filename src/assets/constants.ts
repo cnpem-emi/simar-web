@@ -16,15 +16,15 @@ export const EMPTY_PVS = {
     "Rack Open": {
         name: "",
         value: "?",
-        hi_limit: "",
-        lo_limit: "",
+        hi_limit: 0,
+        lo_limit: 0,
         subscribed: false,
     },
     "Leak": {
         name: "",
         value: "?",
-        hi_limit: "",
-        lo_limit: "",
+        hi_limit: 0,
+        lo_limit: 0,
         subscribed: false,
     },
     "Humidity": {
@@ -43,7 +43,7 @@ export const EMPTY_PVS = {
     },
     "Current": {
         name: "",
-        values: ["?", "?", "?", "?", "?", "?", "?"],
+        value: ["?", "?", "?", "?", "?", "?", "?"],
         hi_limit: 0,
         lo_limit: 20,
         subscribed: [false, false, false, false, false, false, false],

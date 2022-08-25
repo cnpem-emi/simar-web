@@ -4,10 +4,10 @@
       :items="filter_valid"
       :items-per-page.sync="items_per_page"
       :page.sync="page"
-      :search="settings.search"
       :sort-by="settings.sort_by"
       :sort-desc="settings.sort_desc"
       :custom-sort="num_sort"
+      @current-items="update_items"
       loading="true"
       hide-default-footer
     >
@@ -225,7 +225,7 @@ const props = defineProps<{
 }>();
 
 const number_pages = computed(() => {
-  return Math.ceil(filtered_keys.value.length / items_per_page.value);
+  return Math.ceil(filter_valid.value.length / items_per_page.value);
 });
 
 const filtered_keys = computed(() => {
@@ -233,7 +233,7 @@ const filtered_keys = computed(() => {
 });
 
 const filter_valid = computed(() => {
-  return items.value.filter((i) => i.pvs.Pressure.value !== "0 hPa");
+  return items.value.filter((i) => i.name.includes(props.settings.search));
 });
 
 function num_sort(items: Item[], index: string) {
@@ -275,7 +275,7 @@ const onUpdate = (e) => {
     // Rack door status
     items.value[index].pvs[pv_type].value = e.detail.value === 0 ? "No" : "Yes";
   } else if (pv_type === "Current") {
-    items.value[index].pvs.Current.values[
+    items.value[index].pvs.Current.value[
       parseInt(e.detail.pv.charAt(e.detail.pv.indexOf("CH") + 2))
     ] = e.detail.value.toFixed(2) + consts.SYMBOLS[pv_type];
   } else {

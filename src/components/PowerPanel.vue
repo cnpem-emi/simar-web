@@ -111,21 +111,21 @@ function get_color(index: number) {
     (props.item.pvs.Voltage.value !== "?" &&
       props.item.pvs.Voltage.value > props.limits.hi) ||
     props.item.pvs.Voltage.value < props.limits.lo ||
-    props.item.pvs.Current.values.some((current) => {
+    props.item.pvs.Current.value.some((current) => {
       return current !== "?" && parseFloat(current) > 20;
     }) ||
     parseInt(props.item.pvs.Glitches.value) > 2;
 
   if (
     props.item.pvs.Voltage.value === "?" ||
-    props.item.pvs.Current.values[index] === "?"
+    props.item.pvs.Current.value[index] === "?"
   )
     return "gray";
 
   if (
     props.item.pvs.Voltage.value > props.limits.hi ||
     props.item.pvs.Voltage.value < props.limits.lo ||
-    parseFloat(props.item.pvs.Current.values[index]) > 20
+    parseFloat(props.item.pvs.Current.value[index]) > 20
   )
     return "red";
 

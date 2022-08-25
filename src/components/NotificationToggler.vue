@@ -28,6 +28,9 @@ async function toggle_subscribe() {
 }
 
 async function subscribe() {
+  if (internal.sw === undefined)
+    return
+
   if ("granted" === (await Notification.requestPermission())) {
     let subscription = {};
     try {

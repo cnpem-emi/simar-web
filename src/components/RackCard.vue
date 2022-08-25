@@ -1,5 +1,5 @@
 <template>
-  <v-card>
+  <v-card :disabled="item.pvs.Pressure.value === '0.00 hPa'">
     <v-card-title class="subheading font-weight-bold">
       {{ item.name }}
       <v-spacer />

@@ -132,11 +132,13 @@ const telegram_id = ref("Unknown");
 const items = ref([]);
 
 async function unsubscribe_all() {
+  if (internal.sw === undefined)
+    return;
+
   const subscription = await internal.sw.pushManager.getSubscription();
 
-  if (subscription) {
+  if (subscription)
     await subscription.unsubscribe();
-  }
 
   await sendCommand("pvs", "DELETE");
   window.location.reload();
@@ -152,6 +154,9 @@ async function delete_device(item) {
   update_devices();
 }
 async function add_device() {
+  if (internal.sw === undefined)
+    return
+
   if ("granted" === (await Notification.requestPermission())) {
     let subscription = {};
     try {

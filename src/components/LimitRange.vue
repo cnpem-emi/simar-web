@@ -41,11 +41,10 @@ const props = defineProps<{
   name: string;
 }>();
 
-let lo = ref("");
-let hi = ref("");
+let lo = ref(0);
+let hi = ref(0);
 let min = ref(-100);
 let max = ref(80);
-//let rangeValues = [0, 0];
 
 const range = computed({
   get(): number[] {
