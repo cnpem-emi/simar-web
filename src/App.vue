@@ -12,79 +12,60 @@
     <FooterBar />
 
     <v-snackbar
-      v-model="$store.state.snackbar"
+      v-model="internal.snackbar"
       timeout="4000"
       color="white"
       light
       dismissible
     >
-      {{ $store.state.message }}
+      {{ internal.message }}
     </v-snackbar>
   </v-app>
 </template>
 
-<script>
+<script setup lang="ts">
 import CardIterator from "./components/CardIterator";
 import ToolBar from "./components/ToolBar";
 import FooterBar from "./components/FooterBar";
 import { PublicClientApplication } from "@azure/msal-browser";
-import { mdiClose } from "@mdi/js";
-function getInitials(account) {
-  return account.name.split(" ")[0].substring(0, 1);
+import { ref, onBeforeMount } from "vue";
+import { useUserStore } from "./stores/user";
+import { useInternalStore } from "./stores/internal";
+import Settings from "./models/settings";
+
+const user = useUserStore();
+const internal = useInternalStore();
+
+const settings = ref<Settings>({
+  sort_desc: false,
+  sort_by: "Name",
+  search: "",
+  keys: ["Name", "Temperature", "Pressure", "Rack Open", "Humidity", "Leak"],
+  pvs: {},
+});
+function update_search(value: string) {
+  settings.value.search = value;
 }
-export default {
-  name: "SIMAR",
-  components: {
-    ToolBar,
-    CardIterator,
-    FooterBar,
-  },
-  data: () => ({
-    settings: {
-      sort_desc: false,
-      sort_by: "Name",
-      search: "",
-      keys: [
-        "Name",
-        "Temperature",
-        "Pressure",
-        "Rack Open",
-        "Humidity",
-        "Leak",
-      ],
-      pvs: {},
-    },
-    mdiClose,
-  }),
-  methods: {
-    update_search: function (value) {
-      this.settings.search = value;
-    },
-    update_desc: function (value) {
-      this.settings.sort_desc = value;
-    },
-    update_sort: function (value) {
-      this.settings.sort_by = value;
-    },
-  },
-  async created() {
-    const msalInstance = new PublicClientApplication(
-      this.$store.state.msalConfig
-    );
-    this.$store.commit("setInstance", msalInstance);
-    const accounts = this.$store.state.msalInstance.getAllAccounts();
-    if (accounts.length == 0) return;
-    accounts[0].initials = getInitials(accounts[0]);
-    this.$store.commit("setAccount", accounts[0]);
-    const serviceWorker = await navigator.serviceWorker.register("./sw.js");
-    this.$store.commit("setSw", serviceWorker);
-    const channel = new BroadcastChannel("sw");
-    channel.addEventListener(
-      "message",
-      this.$store.commit("updateNotifications")
-    );
-  },
-};
+function update_desc(value: boolean) {
+  settings.value.sort_desc = value;
+}
+function update_sort(value: string) {
+  settings.value.sort_by = value;
+}
+onBeforeMount(async () => {
+  internal.setUrl();
+  user.msalInstance = new PublicClientApplication(user.msalConfig);
+  const accounts = user.msalInstance.getAllAccounts();
+  if (accounts.length == 0) return;
+
+  user.account = accounts[0];
+  const serviceWorker = await navigator.serviceWorker.register("./sw.js");
+
+  internal.sw = serviceWorker;
+  const channel = new BroadcastChannel("sw");
+  channel.addEventListener("message", user.updateNotifications);
+  user.updateNotifications();
+});
 </script>
 
 <style scoped>

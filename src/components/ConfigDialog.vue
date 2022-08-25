@@ -8,7 +8,7 @@
         color="grey"
         v-bind="attrs"
         v-on="on"
-        :disabled="$store.state.account === undefined"
+        :disabled="user.account === undefined"
         ><v-icon dark>{{ mdiCog }}</v-icon></v-btn
       >
     </template>
@@ -17,7 +17,7 @@
         <span class="text-h5">{{ item.name }}</span>
         <v-spacer />
         <a
-          :href="`https://${$store.state.url}/bbbread/?search=${
+          :href="`https://${internal.url}/bbbread/?search=${
             parent_name.split(':')[0]
           }`"
           target="_blank"
@@ -105,7 +105,7 @@
   </v-dialog>
 </template>
 
-<script>
+<script setup lang="ts">
 import LimitRange from "./LimitRange";
 import OutletName from "./OutletName";
 import {
@@ -115,159 +115,148 @@ import {
   mdiCog,
   mdiPowerPlugOutline,
 } from "@mdi/js";
+import { computed, ref, watch, getCurrentInstance } from "vue";
+import { useInternalStore } from "@/stores/internal";
+import { useUserStore } from "@/stores/user";
+import Item from "@/models/item";
+import { sendCommand } from "@/utils";
 
-export default {
-  components: { LimitRange, OutletName },
-  props: ["item"],
-  data: function () {
-    return {
-      dialog: false,
-      status: "Connected",
-      loading_pv: true,
-      outlets: [],
-      outlet_names: ["0", "1", "2", "3", "4", "5", "6"],
-      new_names: {},
-      autotemp: false,
-      range: {
-        Humidity: [0, 0],
-        Temperature: [0, 0],
-        Pressure: [0, 0],
-        Voltage: [0, 0],
-      },
-      load_prog: 0,
-      parent_name: "",
-      mdiCog,
-      mdiPowerPlugOutline,
-      mdiWifi,
-      mdiLanConnect,
-      mdiLanDisconnect,
-    };
-  },
-  methods: {
-    async update_name(name, id) {
-      this.$set(this.outlet_names, id, name);
-      this.new_names[id] = name;
-    },
-    async apply_changes() {
-      this.load_prog = 33;
+const internal = useInternalStore();
+const user = useUserStore();
+const vue = getCurrentInstance();
 
-      const pvs_to_change = [];
+const emit = defineEmits(["update-limit"]);
+const props = defineProps<{
+  item: Item;
+}>();
 
-      for (let pv of Object.keys(this.item.pvs)) {
-        if (!this.item.pvs[pv].name) continue;
+const dialog = ref(false);
+const status = ref("Connected");
+const loading_pv = ref(true);
+const outlets = ref([]);
+const outlet_names = ref(["0", "1", "2", "3", "4", "5", "6"]);
+const new_names = ref({});
+const range = ref({
+  Humidity: [0, 0],
+  Temperature: [0, 0],
+  Pressure: [0, 0],
+  Voltage: [0, 0],
+});
+const load_prog = ref(0);
+const parent_name = ref("");
 
-        if (
-          this.range[pv] !== undefined &&
-          this.range[pv][0] !== this.range[pv][1] &&
-          (this.range[pv][0] !== this.item.pvs[pv].lo_limit ||
-            this.range[pv][1] !== this.item.pvs[pv].hi_limit)
-        ) {
-          pvs_to_change.push({
-            name: this.item.pvs[pv].name,
-            lo_limit: this.range[pv][0],
-            hi_limit: this.range[pv][1],
-          });
-          console.log(pvs_to_change);
-        }
-      }
+async function update_name(name: string, id: number) {
+  outlet_names.value[id] = name;
+  new_names.value[id] = name;
+}
+async function apply_changes() {
+  load_prog.value = 33;
 
-      await this.send_command("pvs", "POST", pvs_to_change);
+  const pvs_to_change = [];
 
-      this.$emit("update-limit", pvs_to_change);
+  for (let pv of Object.keys(props.item.pvs)) {
+    if (!props.item.pvs[pv].name) continue;
 
-      this.load_prog = 80;
+    if (
+      range.value[pv] !== undefined &&
+      range.value[pv][0] !== range.value[pv][1] &&
+      (range.value[pv][0] !== props.item.pvs[pv].lo_limit ||
+        range.value[pv][1] !== props.item.pvs[pv].hi_limit)
+    ) {
+      pvs_to_change.push({
+        name: props.item.pvs[pv].name,
+        lo_limit: range.value[pv][0],
+        hi_limit: range.value[pv][1],
+      });
+    }
+  }
 
-      let outlets = [];
+  await sendCommand("pvs", "POST", pvs_to_change);
 
-      for (let i = 0; i < this.outlet_names.length; i++) {
-        outlets.push({
-          setpoint: this.outlets.includes(i),
-          name: this.new_names[i],
-          id: i,
-        });
-      }
+  emit("update-limit", pvs_to_change);
 
-      await this.send_command(
-        `outlets/SIMAR:${this.parent_name}`,
-        "POST",
-        outlets
-      );
+  load_prog.value = 80;
 
-      this.$store.commit(
-        "showSnackbar",
-        `Successfully applied settings to ${this.item.parent}!`
-      );
+  let newOutlets = [];
 
-      this.dialog = false;
-      this.load_prog = 0;
-    },
-    get_color(index) {
-      if (
-        this.item.pvs.Voltage.value === "?" ||
-        this.item.pvs.Current.values[index] === "?"
-      )
-        return "grey";
-      if (
-        this.item.pvs.Voltage.value > this.item.v_hi ||
-        this.item.pvs.Voltage.value < this.item.v_lo ||
-        this.item.pvs.Current.values[index] > 20
-      )
-        return "red";
+  for (let i = 0; i < outlet_names.value.length; i++) {
+    newOutlets.push({
+      setpoint: outlets.value.includes(i),
+      name: new_names.value[i],
+      id: i,
+    });
+  }
 
-      return "green";
-    },
-  },
-  watch: {
-    async dialog() {
-      this.loading_pv = true;
-      let on_outlets = [];
-      this.parent_name = this.item.parent.replace(" - ", ":");
-      let data;
+  await sendCommand(`outlets/SIMAR:${parent_name.value}`, "POST", newOutlets);
 
-      try {
-        data = await this.send_command(
-          `/beaglebones/status/${
-            this.parent_name.includes(":")
-              ? "BBB:" + this.parent_name
-              : this.parent_name
-          }`,
-          "GET"
-        );
-        data = await data.json();
+  internal.showSnackbar(
+    `Successfully applied settings to ${props.item.parent}!`
+  );
 
-        this.status = data.status ?? "Disconnected";
-      } catch (err) {
-        this.status = "Disconnected";
-        console.warn(err);
-      }
+  dialog.value = false;
+  load_prog.value = 0;
+}
 
-      data = await this.send_command(
-        `outlets/SIMAR:${this.parent_name}`,
-        "GET"
-      );
-      data = await data.json();
+function get_color(index: number) {
+  if (
+    props.item.pvs.Voltage.value === "?" ||
+    props.item.pvs.Current.values[index] === "?"
+  )
+    return "grey";
+  if (
+    props.item.pvs.Voltage.value > props.item.v_hi ||
+    props.item.pvs.Voltage.value < props.item.v_lo ||
+    props.item.pvs.Current.values[index] > 20
+  )
+    return "red";
 
-      for (let i in data) {
-        this.outlet_names[i] = data[i].name;
-        if (data[i].status === 1) on_outlets.push(parseInt(i));
-      }
+  return "green";
+}
 
-      this.outlets = on_outlets;
-      this.loading_pv = data.length < 1;
-    },
-  },
-  computed: {
-    columns() {
-      const column_count = this.$vuetify.breakpoint.mobile ? 1 : 3;
-      let columns = [];
-      let mid = Math.ceil(7 / column_count);
-      for (let col = 0; col < column_count; col++) {
-        columns.push([...Array(7).keys()].slice(col * mid, col * mid + mid));
-      }
-      return columns;
-    },
-  },
-};
+watch(dialog, async () => {
+  loading_pv.value = true;
+  let on_outlets = [];
+  parent_name.value = props.item.parent.replace(" - ", ":");
+  let data;
+
+  try {
+    data = await sendCommand(
+      `beaglebones/status/${
+        parent_name.value.includes(":")
+          ? "BBB:" + parent_name.value
+          : parent_name.value
+      }`,
+      "GET"
+    );
+    data = await data.json();
+
+    status.value = data.status ?? "Disconnected";
+  } catch (err) {
+    status.value = "Disconnected";
+    console.warn(err);
+  }
+
+  data = await sendCommand(`outlets/SIMAR:${parent_name.value}`, "GET");
+  data = await data.json();
+
+  for (let i in data) {
+    outlet_names.value[i] = data[i].name;
+    if (data[i].status === 1) on_outlets.push(parseInt(i));
+  }
+
+  outlets.value = on_outlets;
+  loading_pv.value = data.length < 1;
+});
+
+const columns = computed(() => {
+  const column_count = vue.proxy.$vuetify.breakpoint.mobile ? 1 : 3;
+  let columns = [];
+  let mid = Math.ceil(7 / column_count);
+  for (let col = 0; col < column_count; col++) {
+    columns.push([...Array(7).keys()].slice(col * mid, col * mid + mid));
+  }
+  return columns;
+});
 </script>
 
 <style scoped>

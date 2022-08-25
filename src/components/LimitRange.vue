@@ -31,52 +31,62 @@
   </v-range-slider>
 </template>
 
-<script>
-export default {
-  props: ["item", "name"],
-  data: function () {
-    return {
-      lo: "",
-      hi: "",
-      min: -100,
-      max: 80,
-    };
-  },
-  computed: {
-    range: {
-      get() {
-        return [this.lo, this.hi];
-      },
-      set(input) {
-        this.range[0] = input[0];
-        this.range[1] = input[1];
+<script setup lang="ts">
+import Item from "@/models/item";
+import { ref, onMounted, computed } from "vue";
 
-        this.$emit("change", input);
-      },
-    },
-  },
-  methods: {
-    update_range(e, type) {
-      this[type] = e;
-      this.$emit("change", this.range);
-    },
-  },
-  mounted() {
-    this.lo = this.item.pvs[this.name].lo_limit;
-    this.hi = this.item.pvs[this.name].hi_limit;
+const emit = defineEmits(["change"]);
+const props = defineProps<{
+  item: Item;
+  name: string;
+}>();
 
-    switch (this.name) {
-      case "Voltage":
-        this.max = 1000;
-        break;
-      case "Humidity":
-        this.max = 100;
-        break;
-      case "Pressure":
-        this.max = 1200;
-        this.min = 0;
-        break;
-    }
+let lo = ref("");
+let hi = ref("");
+let min = ref(-100);
+let max = ref(80);
+//let rangeValues = [0, 0];
+
+const range = computed({
+  get(): number[] {
+    return [lo.value, hi.value];
   },
-};
+  set(input: number[]): void {
+    range.value[0] = input[0];
+    range.value[1] = input[1];
+
+    emit("change", input);
+  },
+});
+
+function update_range(e: number, type: string) {
+  switch (type) {
+    case "lo":
+      lo.value = e;
+      break;
+    case "hi":
+      hi.value = e;
+      break;
+  }
+
+  emit("change", range.value);
+}
+
+onMounted(() => {
+  lo.value = props.item.pvs[props.name].lo_limit;
+  hi.value = props.item.pvs[props.name].hi_limit;
+
+  switch (props.name) {
+    case "Voltage":
+      max.value = 1000;
+      break;
+    case "Humidity":
+      max.value = 100;
+      break;
+    case "Pressure":
+      max.value = 1200;
+      min.value = 0;
+      break;
+  }
+});
 </script>

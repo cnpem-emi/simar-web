@@ -22,8 +22,7 @@
           flat
           solo-inverted
           hide-details
-          v-model="sort_by"
-          :items="this.settings.keys"
+          :items="props.settings.keys"
           :prepend-inner-icon="mdiSort"
           label="Sort by"
         ></v-select>
@@ -38,8 +37,8 @@
         </v-btn-toggle>
       </template>
       <v-spacer />
-      <notification-dropdown style="flex-grow: 0"/>
-      <login-menu style="flex-grow: 0" v-on="$listeners" />
+      <NotificationDropdown style="flex-grow: 0" />
+      <LoginMenu style="flex-grow: 0" v-on="$listeners" />
     </v-toolbar>
     <v-toolbar
       v-if="dropdown && $vuetify.breakpoint.smAndDown"
@@ -52,7 +51,7 @@
         flat
         solo-inverted
         hide-details
-        :items="this.settings.keys"
+        :items="props.settings.keys"
         :prepend-inner-icon="mdiMagnify"
         label="Sort by"
       ></v-select>
@@ -61,7 +60,7 @@
         large
         depressed
         color="blue"
-        v-show="!this.settings.sort_desc"
+        v-show="!props.settings.sort_desc"
         v-on:click="$emit('desc', true)"
       >
         <v-icon>{{ mdiTrendingDown }}</v-icon>
@@ -70,7 +69,7 @@
         large
         depressed
         color="blue"
-        v-show="this.settings.sort_desc"
+        v-show="props.settings.sort_desc"
         align="start"
         v-on:click="$emit('desc', false)"
       >
@@ -80,7 +79,7 @@
   </v-container>
 </template>
 
-<script>
+<script setup lang="ts">
 import LoginMenu from "./LoginMenu";
 import NotificationDropdown from "./NotificationDropdown";
 
@@ -91,22 +90,12 @@ import {
   mdiSort,
   mdiMenu,
 } from "@mdi/js";
+import { ref } from "vue";
+import Settings from "@/models/settings";
 
-export default {
-  components: { LoginMenu, NotificationDropdown },
-  props: ["settings"],
-  data() {
-    return {
-      filter: {},
-      dropdown: false,
-      logged: true,
-      sort_by: this.settings.sort_by,
-      mdiTrendingUp,
-      mdiTrendingDown,
-      mdiMagnify,
-      mdiSort,
-      mdiMenu,
-    };
-  },
-};
+const props = defineProps<{
+  settings: Settings;
+}>();
+
+const dropdown = ref(false);
 </script>

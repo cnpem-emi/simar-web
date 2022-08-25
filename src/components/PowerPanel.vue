@@ -30,7 +30,7 @@
             <v-list-item-content>{{ index }}</v-list-item-content>
             <v-spacer />
             <v-chip
-              :href="`https://${$store.state.url}/archiver-viewer/?pv=${
+              :href="`https://${internal.url}/archiver-viewer/?pv=${
                 item.pvs.Voltage.name
               }&pv=${get_current_pv(item.pvs.Current.name, index)}`"
               style="font-size: 10px"
@@ -52,7 +52,7 @@
             <v-spacer />
             <v-chip
               small
-              :href="`https://${$store.state.url}/archiver-viewer/?pv=${item.pvs.Glitches.name}`"
+              :href="`https://${internal.url}/archiver-viewer/?pv=${item.pvs.Glitches.name}`"
               target="_blank"
               :color="get_subvalues_color('Glitches', item.pvs.Glitches.value)"
               text-color="white"
@@ -64,7 +64,7 @@
             <v-spacer />
             <v-chip
               small
-              :href="`https://${$store.state.url}/archiver-viewer/?pv=${item.pvs.PFactor.name}`"
+              :href="`https://${internal.url}/archiver-viewer/?pv=${item.pvs.PFactor.name}`"
               target="_blank"
               :color="get_subvalues_color('PFactor', item.pvs.PFactor.value)"
               text-color="white"
@@ -76,7 +76,7 @@
             <v-spacer />
             <v-chip
               small
-              :href="`https://${$store.state.url}/archiver-viewer/?pv=${item.pvs.Frequency.name}`"
+              :href="`https://${internal.url}/archiver-viewer/?pv=${item.pvs.Frequency.name}`"
               target="_blank"
               :color="
                 get_subvalues_color('Frequency', item.pvs.Frequency.value)
@@ -91,63 +91,62 @@
   </v-expansion-panels>
 </template>
 
-<script>
+<script setup lang="ts">
+import Item from "@/models/item";
+import { ref } from "vue";
 import { mdiAlertCircle, mdiPowerPlugOutline, mdiMenuDown } from "@mdi/js";
+import { useInternalStore } from "@/stores/internal";
 
-export default {
-  props: ["item", "limits"],
-  data: function () {
-    return {
-      critical: false,
-      mdiAlertCircle,
-      mdiPowerPlugOutline,
-      mdiMenuDown,
-    };
-  },
-  methods: {
-    get_color(index) {
-      // If at least one voltage/current value is critical, display a warning icon
-      this.critical =
-        (this.item.pvs.Voltage.value !== "?" &&
-          this.item.pvs.Voltage.value > this.limits.hi) ||
-        this.item.pvs.Voltage.value < this.limits.lo ||
-        this.item.pvs.Current.values.some((current) => {
-          return current !== "?" && current > 20;
-        }) ||
-        this.item.pvs.Glitches > 2;
+const internal = useInternalStore();
 
-      if (
-        this.item.pvs.Voltage.value === "?" ||
-        this.item.pvs.Current.values[index] === "?"
-      )
-        return "gray";
+const props = defineProps<{
+  item: Item;
+  limits: { hi: "0"; lo: "0" };
+}>();
+const critical = ref(false);
 
-      if (
-        this.item.pvs.Voltage.value > this.limits.hi ||
-        this.item.pvs.Voltage.value < this.limits.lo ||
-        this.item.pvs.Current.values[index] > 20
-      )
-        return "red";
+function get_color(index: number) {
+  // If at least one voltage/current value is critical, display a warning icon
+  critical.value =
+    (props.item.pvs.Voltage.value !== "?" &&
+      props.item.pvs.Voltage.value > props.limits.hi) ||
+    props.item.pvs.Voltage.value < props.limits.lo ||
+    props.item.pvs.Current.values.some((current) => {
+      return current !== "?" && parseFloat(current) > 20;
+    }) ||
+    parseInt(props.item.pvs.Glitches.value) > 2;
 
+  if (
+    props.item.pvs.Voltage.value === "?" ||
+    props.item.pvs.Current.values[index] === "?"
+  )
+    return "gray";
+
+  if (
+    props.item.pvs.Voltage.value > props.limits.hi ||
+    props.item.pvs.Voltage.value < props.limits.lo ||
+    parseFloat(props.item.pvs.Current.values[index]) > 20
+  )
+    return "red";
+
+  return "green";
+}
+function get_subvalues_color(type: string, value: string) {
+  if (value === "?" || value === "") return "gray";
+  const numValue = parseFloat(value);
+  switch (type) {
+    case "Frequency":
+      if (numValue < 55 || numValue > 65) return "red";
+      break;
+    case "PFactor":
       return "green";
-    },
-    get_subvalues_color(type, value) {
-      if (value === "?" || value === "") return "gray";
-      switch (type) {
-        case "Frequency":
-          if (value < 55 || value > 65) return "red";
-          break;
-        case "PFactor":
-          return "green";
-        case "Glitches":
-          if (value > 2) return "red";
-          break;
-      }
-      return "green";
-    },
-    get_current_pv(name, index) {
-      return name.replace("?", index);
-    },
-  },
-};
+    case "Glitches":
+      if (numValue > 2) return "red";
+      break;
+  }
+  return "green";
+}
+function get_current_pv(name: string, index: number) {
+  return name.replace("?", index.toString());
+}
 </script>
