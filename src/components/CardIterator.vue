@@ -307,7 +307,7 @@ onMounted(async () => {
   //  console.warn("Notifications are not available");
   //}
 
-  external_sensor.value = items.value.find((e) => e.name === "B, 15");
+  external_sensor.value = items.value.find((e) => e.name === "B, 15") || {pvs: consts.EMPTY_PVS};
 });
 </script>
 
