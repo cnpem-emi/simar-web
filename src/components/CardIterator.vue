@@ -7,7 +7,6 @@
       :sort-by="settings.sort_by"
       :sort-desc="settings.sort_desc"
       :custom-sort="num_sort"
-      @current-items="update_items"
       loading="true"
       hide-default-footer
     >
@@ -142,7 +141,7 @@ import {
   mdiGauge,
 } from "@mdi/js";
 import { computed, ref, onMounted } from "vue";
-import Item from "../models/item";
+import { Item } from "../models/item";
 import Settings from "@/models/settings";
 import { sendCommand } from "../utils";
 
@@ -150,7 +149,7 @@ const internal = useInternalStore();
 
 const page = ref(1);
 const items_per_page = ref(8);
-const items = ref([]);
+const items = ref<Array<Item>>([]);
 let con: e2w.jlab.epics2web.ClientConnection;
 const external_sensor = ref<Item>({
   pvs: consts.EMPTY_PVS,
@@ -185,10 +184,17 @@ async function parse_json() {
             pv_names = pv_names.concat(current_pv_names);
           }
 
+          for (let pv in consts.EMPTY_PVS) {
+            if (!(pv in sensor.pvs)) {
+              sensor.pvs[pv] = consts.EMPTY_PVS[pv];
+            }
+            sensor.pvs[pv].value = consts.EMPTY_PVS[pv].value.slice();
+          }
+
           items.value.push({
             parent: parent,
             name: sensor.name,
-            pvs: fill_template(sensor.pvs),
+            pvs: sensor.pvs,
           });
           pvs = pvs.concat(pv_names);
         }
@@ -207,17 +213,7 @@ function get_type(pv: string) {
     if (pv_type.includes("PwrFactor")) return "PFactor";
     if (pv_type.includes("Glitch")) return "Glitches";
   }
-}
-
-function fill_template(pvs) {
-  let filled = JSON.parse(JSON.stringify(consts.EMPTY_PVS)); // Deep copy needs to be made
-
-  for (let type_key of Object.keys(pvs)) {
-    for (let value of Object.keys(pvs[type_key]))
-      filled[type_key][value] = pvs[type_key][value];
-  }
-
-  return filled;
+  return "Temperature";
 }
 
 const props = defineProps<{
@@ -238,26 +234,37 @@ const filter_valid = computed(() => {
 
 function num_sort(items: Item[], index: string) {
   items.sort((a, b) => {
-    if (index[0] === "Name")
-      return props.settings.sort_desc ? b.name > a.name : a.name > b.name;
+    let sort_val: number;
+    if (index[0] === "Name") {
+      sort_val = b.name > a.name ? -1 : 1;
+    } else {
+      sort_val = b.pvs[index[0]].value > a.pvs[index[0]].value ? -1 : 1;
+    }
 
-    const is_first = a.pvs[index[0]].value > b.pvs[index[0]].value;
-    return props.settings.sort_desc ? !is_first : is_first;
+    return sort_val * (props.settings.sort_desc ? -1 : 1);
   });
   return items;
 }
+
 async function get_pv_info() {
   const response = await sendCommand("pvs", "GET");
   return await response.json();
 }
+
 async function update_sub(item: Item, key: string) {
   item.pvs[key].subscribed = !item.pvs[key].subscribed;
 }
+
 async function update_limit(item: Item, pvs) {
   for (let pv of pvs) {
     const pv_type = Object.keys(item.pvs).find(
       (k) => item.pvs[k].name === pv.name
     );
+
+    if (!pv_type) {
+      return;
+    }
+
     item.pvs[pv_type].hi_limit = pv.hi_limit;
     item.pvs[pv_type].lo_limit = pv.lo_limit;
   }
@@ -303,11 +310,10 @@ onMounted(async () => {
       items.value[i].pvs[pv_type].lo_limit = pv.lo_limit;
     }
   }
-  //} catch {
-  //  console.warn("Notifications are not available");
-  //}
 
-  external_sensor.value = items.value.find((e) => e.name === "B, 15") || {pvs: consts.EMPTY_PVS};
+  external_sensor.value = items.value.find((e) => e.name === "B, 15") || {
+    pvs: consts.EMPTY_PVS,
+  };
 });
 </script>
 

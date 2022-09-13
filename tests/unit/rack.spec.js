@@ -8,7 +8,7 @@ import { defineStore, PiniaVuePlugin } from 'pinia'
 
 describe('RackCard.vue', () => {
   const keys = ["Temperature", "Pressure", "Rack Open", "Humidity", "Leak"]
-  const pvs = Object.assign({}, EMPTY_PVS, {Temperature: {name: "960E1:CO-SIMAR-01:Temp-Mon", value: "20 C"}, Pressure: {name: "960E1:CO-SIMAR-01:Pressure-Mon", value: "900 hPa"}});
+  const pvs = Object.assign({}, EMPTY_PVS, { Temperature: { name: "960E1:CO-SIMAR-01:Temp-Mon", value: "20 C" }, Pressure: { name: "960E1:CO-SIMAR-01:Pressure-Mon", value: "900 hPa" } });
 
   const default_item = { name: "Test", parent: "Test", pv_names: ["960E1:CO-SIMAR-01:Temp-Mon", "960E1:CO-SIMAR-01:Pressure-Mon"], pvs: pvs };
   const localVue = createLocalVue();
@@ -24,8 +24,8 @@ describe('RackCard.vue', () => {
     return mount(RackCard, {
       localVue,
       vuetify,
-      pinia: createTestingPinia({initialState: {user: {account: undefined}, internal: {url: "pudim.com.br"}}}),
-      propsData: { item: default_item, filtered_keys: keys},
+      pinia: createTestingPinia({ initialState: { user: { account: undefined }, internal: { url: "pudim.com.br" } } }),
+      propsData: { item: default_item, filtered_keys: keys },
       mocks: {
         $vuetify: { breakpoint: {} },
         item: default_item,
@@ -59,7 +59,6 @@ describe('RackCard.vue', () => {
     const wrapper = mountFunction();
 
     expect(wrapper.find(".v-card").find(".v-list").findAll("span .v-chip__content").at(0).text()).toMatch("20 C");
-    console.log(wrapper.html());
 
     item.pvs.Temperature.value = "22 C";
     await wrapper.setProps(item);

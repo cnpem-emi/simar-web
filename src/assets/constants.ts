@@ -1,3 +1,5 @@
+import { PvMap } from "@/models/item";
+
 export const EMPTY_PVS = {
     "Temperature": {
         name: "",
@@ -71,7 +73,7 @@ export const EMPTY_PVS = {
     }
 };
 
-export const SYMBOLS = {
+export const SYMBOLS: Record<string, string> = {
     Temperature: " C",
     Humidity: "%",
     Pressure: " hPa",

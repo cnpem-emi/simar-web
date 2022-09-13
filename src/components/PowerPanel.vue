@@ -16,7 +16,7 @@
       <v-expansion-panel-content>
         <v-list dense style="column-count: 2">
           <v-list-item
-            v-for="(key, index) in item.pvs.Current.values"
+            v-for="(key, index) in item.pvs.Current.value"
             :key="index"
             style="padding: 2px"
           >
@@ -40,7 +40,7 @@
               target="_blank"
             >
               {{
-                `${item.pvs.Voltage.value} / ${item.pvs.Current.values[index]}`
+                `${item.pvs.Voltage.value} / ${item.pvs.Current.value[index]}`
               }}
             </v-chip>
           </v-list-item>
@@ -92,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import Item from "@/models/item";
+import { Item } from "@/models/item";
 import { ref } from "vue";
 import { mdiAlertCircle, mdiPowerPlugOutline, mdiMenuDown } from "@mdi/js";
 import { useInternalStore } from "@/stores/internal";
