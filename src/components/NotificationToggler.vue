@@ -28,18 +28,18 @@ async function toggle_subscribe() {
 }
 
 async function subscribe() {
-  if (internal.sw === undefined)
-    return
+  if (internal.sw === undefined) return;
 
   if ("granted" === (await Notification.requestPermission())) {
-    let subscription = {};
+    let raw_sub: PushSubscription | null;
+
     try {
       await internal.sw.ready;
 
-      subscription = await internal.sw.pushManager.getSubscription();
+      raw_sub = await internal.sw.pushManager.getSubscription();
 
-      if (!subscription) {
-        subscription = await internal.sw.pushManager.subscribe({
+      if (!raw_sub) {
+        raw_sub = await internal.sw.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: b64_uint8(process.env.VUE_APP_PUSH_KEY),
         });
@@ -49,14 +49,21 @@ async function subscribe() {
       internal.showSnackbar(
         "We couldn't set up notifications for your browser. You can still use Telegram notifications, however."
       );
+      return;
     }
 
-    subscription = subscription.toJSON();
+    let subscription = raw_sub.toJSON();
+
+    if (subscription.keys === undefined) {
+      return;
+    }
 
     const pv_data = {
       pvs: [
         {
           name: props.pv.name,
+          hi_limit: 0,
+          lo_limit: 0,
         },
       ],
       endpoint: subscription.endpoint,
@@ -66,10 +73,7 @@ async function subscribe() {
       user_agent: navigator.userAgent,
     };
 
-    if (props.pv.value === "No" || props.pv.value === "Yes") {
-      pv_data.pvs[0].hi_limit = 0;
-      pv_data.pvs[0].lo_limit = 0;
-    } else {
+    if (props.pv.value !== "No" && props.pv.value !== "Yes") {
       pv_data.pvs[0].hi_limit = props.pv.hi_limit;
       pv_data.pvs[0].lo_limit = props.pv.lo_limit;
     }

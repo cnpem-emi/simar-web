@@ -79,12 +79,16 @@ async function login() {
 }
 
 async function logout() {
+  if (internal.sw === undefined || user.msalInstance === undefined) {
+    return;
+  }
+
   let subscription = await internal.sw.pushManager.getSubscription();
 
   if (subscription)
     await sendCommand(`devices?endpoints=${subscription.endpoint}`, "DELETE");
 
-  await user.msalInstance.logout({}).catch((error) => {
+  await user.msalInstance.logoutRedirect({}).catch((error) => {
     console.error(error);
   });
 }

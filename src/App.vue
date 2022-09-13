@@ -55,6 +55,8 @@ function update_sort(value: string) {
 onBeforeMount(async () => {
   internal.setUrl();
   user.msalInstance = new PublicClientApplication(user.msalConfig);
+
+  await user.msalInstance.handleRedirectPromise();
   const accounts = user.msalInstance.getAllAccounts();
   if (accounts.length == 0) return;
 

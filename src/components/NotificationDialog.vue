@@ -113,6 +113,7 @@ import { mdiLinkVariantRemove, mdiCog } from "@mdi/js";
 import { ref, watch } from "vue";
 import { useInternalStore } from "@/stores/internal";
 import { b64_uint8, sendCommand } from "@/utils";
+import { Device } from "@/models/notification";
 
 const internal = useInternalStore();
 
@@ -129,42 +130,42 @@ const headers = ref([
   { value: "actions", sortable: false },
 ]);
 const telegram_id = ref("Unknown");
-const items = ref([]);
+const items = ref<Array<Device>>([]);
 
 async function unsubscribe_all() {
-  if (internal.sw === undefined)
-    return;
+  if (internal.sw === undefined) return;
 
   const subscription = await internal.sw.pushManager.getSubscription();
 
-  if (subscription)
-    await subscription.unsubscribe();
+  if (subscription) await subscription.unsubscribe();
 
   await sendCommand("pvs", "DELETE");
   window.location.reload();
 }
+
 async function update_devices() {
   const response = await sendCommand("devices", "GET");
   const data = await response.json();
   items.value = data.devices;
   telegram_id.value = data.telegram_id || "Unknown";
 }
-async function delete_device(item) {
+
+async function delete_device(item: Device) {
   await sendCommand(`devices?endpoints=${item.endpoint}`, "DELETE");
   update_devices();
 }
+
 async function add_device() {
-  if (internal.sw === undefined)
-    return
+  if (internal.sw === undefined) return;
 
   if ("granted" === (await Notification.requestPermission())) {
-    let subscription = {};
+    let raw_sub: PushSubscription | null;
     try {
       await internal.sw.ready;
 
-      subscription = await internal.sw.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await internal.sw.pushManager.subscribe({
+      raw_sub = await internal.sw.pushManager.getSubscription();
+      if (!raw_sub) {
+        raw_sub = await internal.sw.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: b64_uint8(process.env.VUE_APP_PUSH_KEY),
         });
@@ -173,8 +174,13 @@ async function add_device() {
       internal.showSnackbar(
         "A certificate error has occurred and we couldn't set up notifications for your browser. You can enable browser notifications by allowing insecure content in the site's permissions."
       );
+      return;
     }
-    subscription = subscription.toJSON();
+    let subscription = raw_sub.toJSON();
+
+    if (subscription.keys === undefined) {
+      return;
+    }
 
     await sendCommand("subscribe", "POST", {
       endpoint: subscription.endpoint,

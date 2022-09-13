@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { AccountInfo, PublicClientApplication } from "@azure/msal-browser";
 import { useInternalStore } from "./internal";
-import PushNotification from '@/models/notification';
+import { PushNotification } from '@/models/notification';
 
 interface State {
   msalConfig: {

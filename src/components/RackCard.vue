@@ -74,7 +74,7 @@ const props = defineProps<{
 function getPvColor(item: Item, key: string) {
   const value = item.pvs[key].value;
 
-  if (value === "?") return "gray";
+  if (value === "?" || Array.isArray(value)) return "gray";
 
   const m_type = key.charAt(0).toLowerCase();
   const f_value =
@@ -107,5 +107,5 @@ function display_archiver() {
   );
 }
 
-defineExpose({getPvColor});
+defineExpose({ getPvColor });
 </script>
