@@ -12,4 +12,9 @@ interface PvMap {
     subscribed: (boolean | boolean[])
 }
 
-export { PvMap, Item }
+interface Outlet {
+    name: string,
+    status: number
+}
+
+export { PvMap, Item, Outlet }

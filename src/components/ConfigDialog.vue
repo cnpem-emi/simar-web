@@ -118,7 +118,7 @@ import {
 import { computed, ref, watch, getCurrentInstance } from "vue";
 import { useInternalStore } from "@/stores/internal";
 import { useUserStore } from "@/stores/user";
-import Item from "@/models/item";
+import { Item, Outlet } from "@/models/item";
 import { sendCommand } from "@/utils";
 
 const internal = useInternalStore();
@@ -133,10 +133,10 @@ const props = defineProps<{
 const dialog = ref(false);
 const status = ref("Connected");
 const loading_pv = ref(true);
-const outlets = ref([]);
-const outlet_names = ref(["0", "1", "2", "3", "4", "5", "6"]);
-const new_names = ref({});
-const range = ref({
+const outlets = ref<Array<number>>([]);
+const outlet_names = ref<Array<string>>(["0", "1", "2", "3", "4", "5", "6"]);
+const new_names = ref<Record<number, string>>({});
+const range = ref<Record<string, Array<number>>>({
   Humidity: [0, 0],
   Temperature: [0, 0],
   Pressure: [0, 0],
@@ -187,7 +187,7 @@ async function apply_changes() {
     });
   }
 
-  if (!loading_pv.value) 
+  if (!loading_pv.value)
     await sendCommand(`outlets/SIMAR:${parent_name.value}`, "POST", newOutlets);
 
   internal.showSnackbar(
@@ -238,15 +238,15 @@ watch(dialog, async () => {
   }
 
   data = await sendCommand(`outlets/SIMAR:${parent_name.value}`, "GET");
-  data = await data.json();
+  let outlet_data: Array<Outlet> = await data.json();
 
-  for (let i in data) {
-    outlet_names.value[i] = data[i].name;
-    if (data[i].status === 1) on_outlets.push(parseInt(i));
+  for (let i in outlet_data) {
+    outlet_names.value[i] = outlet_data[i].name;
+    if (outlet_data[i].status === 1) on_outlets.push(parseInt(i));
   }
 
   outlets.value = on_outlets;
-  loading_pv.value = data.length < 1;
+  loading_pv.value = outlet_data.length < 1;
 });
 
 const columns = computed(() => {

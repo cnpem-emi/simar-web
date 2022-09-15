@@ -186,9 +186,13 @@ async function parse_json() {
 
           for (let pv in consts.EMPTY_PVS) {
             if (!(pv in sensor.pvs)) {
-              sensor.pvs[pv] = consts.EMPTY_PVS[pv];
+              sensor.pvs[pv] = JSON.parse(JSON.stringify(consts.EMPTY_PVS[pv]));
             }
-            sensor.pvs[pv].value = consts.EMPTY_PVS[pv].value.slice();
+            sensor.pvs[pv] = Object.assign(
+              {},
+              consts.EMPTY_PVS[pv],
+              sensor.pvs[pv]
+            );
           }
 
           items.value.push({
@@ -255,7 +259,7 @@ async function update_sub(item: Item, key: string) {
   item.pvs[key].subscribed = !item.pvs[key].subscribed;
 }
 
-async function update_limit(item: Item, pvs) {
+async function update_limit(item: Item, pvs: Array<Record<string, any>>) {
   for (let pv of pvs) {
     const pv_type = Object.keys(item.pvs).find(
       (k) => item.pvs[k].name === pv.name
@@ -311,9 +315,11 @@ onMounted(async () => {
     }
   }
 
-  external_sensor.value = items.value.find((e) => e.name === "B, 15") || {
-    pvs: consts.EMPTY_PVS,
-  };
+  const external_found = items.value.find((e) => e.name === "B, 15");
+
+  if (external_found !== undefined) {
+    external_sensor.value = external_found;
+  }
 });
 </script>
 

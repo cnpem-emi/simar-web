@@ -1,6 +1,6 @@
 import { PvMap } from "@/models/item";
 
-export const EMPTY_PVS = {
+export const EMPTY_PVS: Record<string, PvMap> = {
     "Temperature": {
         name: "",
         value: "?",
