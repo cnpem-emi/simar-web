@@ -101,34 +101,32 @@ const internal = useInternalStore();
 
 const props = defineProps<{
   item: Item;
-  limits: { hi: "0"; lo: "0" };
 }>();
 const critical = ref(false);
 
 function get_color(index: number) {
   // If at least one voltage/current value is critical, display a warning icon
-  critical.value =
-    (props.item.pvs.Voltage.value !== "?" &&
-      props.item.pvs.Voltage.value > props.limits.hi) ||
-    props.item.pvs.Voltage.value < props.limits.lo ||
-    props.item.pvs.Current.value.some((current) => {
-      return current !== "?" && parseFloat(current) > 20;
-    }) ||
-    parseInt(props.item.pvs.Glitches.value) > 2;
-
   if (
     props.item.pvs.Voltage.value === "?" ||
     props.item.pvs.Current.value[index] === "?"
   )
     return "gray";
 
-  if (
-    props.item.pvs.Voltage.value > props.limits.hi ||
-    props.item.pvs.Voltage.value < props.limits.lo ||
-    parseFloat(props.item.pvs.Current.value[index]) > 20
-  )
-    return "red";
+  const voltage = parseFloat(props.item.pvs.Voltage.value);
 
+  if (
+    voltage > props.item.pvs.Voltage.hi_limit ||
+    voltage < props.item.pvs.Voltage.lo_limit ||
+    parseFloat(props.item.pvs.Current.value[index]) > 20
+  ) {
+    critical.value = true;
+    return "red";
+  }
+
+  critical.value =
+    props.item.pvs.Current.value.some((current: string) => {
+      return current !== "?" && parseFloat(current) > 20;
+    }) || parseInt(props.item.pvs.Glitches.value) > 2;
   return "green";
 }
 function get_subvalues_color(type: string, value: string) {

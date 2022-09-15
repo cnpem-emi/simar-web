@@ -201,13 +201,16 @@ async function apply_changes() {
 function get_color(index: number) {
   if (
     props.item.pvs.Voltage.value === "?" ||
-    props.item.pvs.Current.value[index] === "?"
+    props.item.pvs.Current.value[index] === "?" ||
+    Array.isArray(props.item.pvs.Voltage.value)
   )
     return "grey";
+
+  const voltage = parseInt(props.item.pvs.Voltage.value);
   if (
-    props.item.pvs.Voltage.value > props.item.v_hi ||
-    props.item.pvs.Voltage.value < props.item.v_lo ||
-    props.item.pvs.Current.value[index] > 20
+    voltage > props.item.pvs.Voltage.hi_limit ||
+    voltage < props.item.pvs.Voltage.lo_limit ||
+    parseInt(props.item.pvs.Current.value[index]) > 20
   )
     return "red";
 
